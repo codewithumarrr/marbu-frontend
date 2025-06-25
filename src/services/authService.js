@@ -19,6 +19,12 @@ export async function register(userData) {
   return response.data;
 }
 
+// Get all roles for registration (correct endpoint)
+export async function getAllRoles() {
+  const response = await api.get('/roles');
+  return response.data;
+}
+
 // Logout user
 export function logout() {
   localStorage.removeItem('accessToken');
