@@ -1,0 +1,25 @@
+/* Custom Tailwind utility extensions for buttons and inputs */
+
+.btn-primary {
+  @apply bg-gradient-to-r from-green-500 to-blue-800 text-white font-semibold px-5 py-2 rounded-lg shadow hover:from-green-600 hover:to-blue-900 transition;
+}
+
+.btn-secondary {
+  @apply bg-gray-100 text-gray-700 border border-gray-300 font-semibold px-5 py-2 rounded-lg hover:bg-gray-200 transition;
+}
+
+.btn-success {
+  @apply bg-gradient-to-r from-green-500 to-blue-800 text-white font-semibold px-5 py-2 rounded-lg shadow hover:from-green-600 hover:to-blue-900 transition;
+}
+
+.btn-invoice {
+  @apply bg-gradient-to-r from-green-500 to-blue-800 text-white font-semibold px-5 py-2 rounded-lg shadow hover:from-green-600 hover:to-blue-900 transition;
+}
+
+.input {
+  @apply px-4 py-2 border-2 border-gray-200 rounded-lg text-base bg-white focus:outline-none focus:border-green-500 transition;
+}
+
+.input-bordered {
+  @apply border-gray-300;
+}
