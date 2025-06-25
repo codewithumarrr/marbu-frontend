@@ -2,19 +2,19 @@ import React from "react";
 import "../styles/components.css";
 import { NavLink } from "react-router-dom";
 
-const tabs = [
-  { id: "dashboard", icon: "📊", name: "Dashboard", path: "/" },
-  { id: "receiving", icon: "⬇️", name: "Fuel Receiving", path: "/receiving" },
-  { id: "consumption", icon: "⬆️", name: "Fuel Consumption", path: "/consumption" },
-  { id: "reports", icon: "📋", name: "Reports", path: "/reports" },
-  { id: "invoices", icon: "📋", name: "Invoices", path: "/invoices" },
-  { id: "audit", icon: "🔍", name: "Audit Trail", path: "/audit" },
+const navItems = [
+  { id: 'dashboard', iconClass: 'fas fa-tachometer-alt', label: 'Dashboard', path: '/' },
+  { id: 'receiving', iconClass: 'fas fa-truck-loading', label: 'Fuel Receiving', path: '/receiving' },
+  { id: 'consumption', iconClass: 'fas fa-gas-pump', label: 'Fuel Consumption', path: '/consumption' },
+  { id: 'reports', iconClass: 'fas fa-chart-line', label: 'Reports', path: '/reports' },
+  { id: 'invoices', iconClass: 'fas fa-file-invoice-dollar', label: 'Invoices', path: '/invoices' },
+  { id: 'audit', iconClass: 'fas fa-clipboard-list', label: 'Audit Trail', path: '/audit' },
 ];
 
-function NavigationTabs() {
+const NavigationTabs = () => {
   return (
     <div className="nav-tabs">
-      {tabs.map((tab) => (
+      {navItems.map((tab) => (
         <NavLink
           key={tab.id}
           to={tab.path}
@@ -23,7 +23,7 @@ function NavigationTabs() {
             `nav-tab${isActive ? " active" : ""}`
           }
         >
-          {tab.icon} {tab.name}
+          <i className={tab.iconClass} style={{ marginRight: 8 }}></i>{tab.label}
         </NavLink>
       ))}
     </div>
