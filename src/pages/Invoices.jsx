@@ -1,8 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/pages.css";
 import FilterGroup from "../components/FilterGroup";
 import TableComponent from "../components/TableComponent";
 import Modal from "../components/Modal";
+import {
+  getAllInvoices,
+  getFilteredInvoices,
+  getInvoiceById,
+  createInvoice,
+  updateInvoice,
+  deleteInvoice,
+  generateInvoiceFromConsumption
+} from "../services/invoicesService.js";
 
 function Invoices() {
   const invoiceHeaders = [
@@ -14,25 +23,8 @@ function Invoices() {
     "Status",
     "Actions",
   ];
-  const invoiceData = [
-    {
-      invoiceNo: "INV-2025-001",
-      supplier: "Qatar Fuel Company",
-      date: "2025-06-15",
-      dueDate: "2025-07-15",
-      amount: "QAR 5,500.00",
-      status: "Pending",
-    },
-    {
-      invoiceNo: "INV-2025-002",
-      supplier: "Gulf Energy Ltd.",
-      date: "2025-05-28",
-      dueDate: "2025-06-28",
-      amount: "QAR 8,200.00",
-      status: "Paid",
-    },
-  ];
 
+  const [invoiceData, setInvoiceData] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -43,19 +35,50 @@ function Invoices() {
     amount: '',
     status: 'Pending',
   });
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
 
-  const loadInvoices = () => {
-    // Add logic to filter and load invoices
+  useEffect(() => {
+    loadInvoices();
+    // eslint-disable-next-line
+  }, []);
+
+  const loadInvoices = async (filters = {}) => {
+    setLoading(true);
+    setApiError('');
+    try {
+      // Use filtered endpoint if filters provided, else get all
+      let data;
+      if (Object.keys(filters).length > 0) {
+        data = await getFilteredInvoices(filters);
+        setInvoiceData(data?.data || []);
+      } else {
+        data = await getAllInvoices();
+        setInvoiceData(data?.data || []);
+      }
+    } catch (err) {
+      setApiError(err?.response?.data?.message || err.message || 'Failed to load invoices');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const createNewInvoice = () => {
     setIsCreateModalOpen(true);
   };
 
-  const showInvoiceModal = (invoiceNo) => {
-    const invoice = invoiceData.find((inv) => inv.invoiceNo === invoiceNo);
-    setSelectedInvoice(invoice);
-    setIsModalOpen(true);
+  const showInvoiceModal = async (invoiceId) => {
+    setLoading(true);
+    setApiError('');
+    try {
+      const invoice = await getInvoiceById(invoiceId);
+      setSelectedInvoice(invoice?.data || null);
+      setIsModalOpen(true);
+    } catch (err) {
+      setApiError(err?.response?.data?.message || err.message || 'Failed to load invoice details');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const closeModal = () => {
@@ -73,26 +96,45 @@ function Invoices() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCreateSubmit = (e) => {
+  const handleCreateSubmit = async (e) => {
     e.preventDefault();
-    // Here you would add the new invoice to your data
-    closeCreateModal();
+    setLoading(true);
+    setApiError('');
+    try {
+      await createInvoice(form);
+      closeCreateModal();
+      loadInvoices();
+    } catch (err) {
+      setApiError(err?.response?.data?.message || err.message || 'Failed to create invoice');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div id="invoices" className="content-panel">
       <h2 style={{ marginBottom: '20px', color: '#015998' }}>Diesel Invoices</h2>
-      <FilterGroup onSubmit={loadInvoices}>
+      <FilterGroup onSubmit={e => {
+        e.preventDefault();
+        const form = e.target;
+        const filters = {
+          invoiceType: form.invoiceType.value,
+          supplierId: form.supplierId.value,
+          dateFrom: form.dateFrom.value,
+          dateTo: form.dateTo.value
+        };
+        loadInvoices(filters);
+      }}>
         <div className="form-group">
           <label className="form-label">Invoice Type</label>
-          <select className="form-select" id="invoiceType">
+          <select className="form-select" id="invoiceType" name="invoiceType">
             <option value="supplier">Supplier Billing</option>
             <option value="internal">Internal Cost Allocation</option>
           </select>
         </div>
         <div className="form-group">
           <label className="form-label">Supplier</label>
-          <select className="form-select" id="invoiceSupplier">
+          <select className="form-select" id="invoiceSupplier" name="supplierId">
             <option value="">All Suppliers</option>
             <option value="sup-001">Qatar Fuel Company</option>
             <option value="sup-002">Gulf Energy Ltd.</option>
@@ -101,11 +143,11 @@ function Invoices() {
         </div>
         <div className="form-group">
           <label className="form-label">Date From</label>
-          <input type="date" className="form-input" id="invoiceDateFrom" defaultValue="2025-05-01" />
+          <input type="date" className="form-input" id="invoiceDateFrom" name="dateFrom" defaultValue="2025-05-01" />
         </div>
         <div className="form-group">
           <label className="form-label">Date To</label>
-          <input type="date" className="form-input" id="invoiceDateTo" defaultValue="2025-06-21" />
+          <input type="date" className="form-input" id="invoiceDateTo" name="dateTo" defaultValue="2025-06-21" />
         </div>
         <div className="form-group" style={{ alignSelf: 'end' }}>
           <button type="submit" className="btn btn-primary">
@@ -118,24 +160,57 @@ function Invoices() {
           Create New Invoice
         </button>
       </div>
+      {apiError && (
+        <div style={{
+          background: '#fef2f2',
+          border: '1px solid #fecaca',
+          color: '#dc2626',
+          padding: '12px',
+          borderRadius: '6px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <span>❌</span>
+          <span>{apiError}</span>
+        </div>
+      )}
+      {loading && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #015998',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}></div>
+        </div>
+      )}
       <TableComponent
         headers={invoiceHeaders}
         data={invoiceData}
         renderRow={(row) => (
           <>
-            <td>{row.invoiceNo}</td>
+            <td>{row.invoiceNo || row.id}</td>
             <td>{row.supplier}</td>
             <td>{row.date}</td>
             <td>{row.dueDate}</td>
             <td>{row.amount}</td>
             <td>
-              <span className={`status-badge status-${row.status.toLowerCase()}`}>{row.status}</span>
+              <span className={`status-badge status-${row.status?.toLowerCase()}`}>{row.status}</span>
             </td>
             <td>
               <button
                 className="btn btn-secondary"
                 style={{ padding: '5px 10px', fontSize: '12px' }}
-                onClick={() => showInvoiceModal(row.invoiceNo)}
+                onClick={() => showInvoiceModal(row.id)}
               >
                 👁️ View
               </button>
@@ -146,7 +221,7 @@ function Invoices() {
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
-        title={`Invoice Details: ${selectedInvoice?.invoiceNo || ""}`}
+        title={`Invoice Details: ${selectedInvoice?.invoiceNo || selectedInvoice?.id || ""}`}
       >
         {selectedInvoice && (
           <div>
@@ -237,6 +312,13 @@ function Invoices() {
           </div>
         </form>
       </Modal>
+      {/* CSS for animations */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

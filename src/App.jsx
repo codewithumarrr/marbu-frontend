@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Header from "./components/Header";
 import NavigationTabs from "./components/NavigationTabs";
@@ -10,11 +10,8 @@ import Invoices from "./pages/Invoices";
 import AuditTrail from "./pages/AuditTrail";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import { isAuthenticated, initializeServices } from "./services/index.js";
 import "./styles/App.css";
-
-function isAuthenticated() {
-  return localStorage.getItem('isLoggedIn') === 'true';
-}
 
 function PrivateRoute({ children }) {
   return isAuthenticated() ? children : <Navigate to="/login" replace />;
@@ -23,6 +20,7 @@ function PrivateRoute({ children }) {
 function App() {
   const location = useLocation();
   const hideHeaderNav = location.pathname === '/login' || location.pathname === '/signup';
+
   return (
     <div className="container">
       {!hideHeaderNav && <Header />}

@@ -1,7 +1,13 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/pages.css";
 import FilterGroup from "../components/FilterGroup";
 import TableComponent from "../components/TableComponent";
+import {
+  getAllAuditLogs,
+  getFilteredAuditLogs,
+  getAuditLogUsers,
+  getAuditLogRecordTypes
+} from "../services/auditTrailService.js";
 
 function AuditTrail() {
   const auditHeaders = [
@@ -12,35 +18,65 @@ function AuditTrail() {
     "Record ID",
     "Details",
   ];
-  const auditData = [
-    {
-      timestamp: "2025-06-21 10:30:15",
-      user: "John Doe",
-      action: "CREATE",
-      recordType: "Fuel Receipt",
-      recordId: "RCP-2025-001234",
-      details: "Added new fuel receipt - 500L",
-    },
-    {
-      timestamp: "2025-06-21 09:15:42",
-      user: "Mike Smith",
-      action: "UPDATE",
-      recordType: "Consumption",
-      recordId: "CON-2025-000856",
-      details: "Updated fuel consumption record",
-    },
-    {
-      timestamp: "2025-06-21 08:45:30",
-      user: "Jane Smith",
-      action: "VIEW",
-      recordType: "Report",
-      recordId: "RPT-2025-000123",
-      details: "Generated monthly fuel report",
-    },
-  ];
+  const [auditData, setAuditData] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [recordTypes, setRecordTypes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
 
-  const handleFilterAudit = () => {
-    // Add logic to filter audit trail
+  useEffect(() => {
+    loadFilters();
+    loadAuditLogs();
+    // eslint-disable-next-line
+  }, []);
+
+  const loadFilters = async () => {
+    setLoading(true);
+    setApiError('');
+    try {
+      const [usersRes, recordTypesRes] = await Promise.all([
+        getAuditLogUsers(),
+        getAuditLogRecordTypes()
+      ]);
+      setUsers(usersRes?.data || []);
+      setRecordTypes(recordTypesRes?.data || []);
+    } catch (err) {
+      setApiError(err?.response?.data?.message || err.message || 'Failed to load audit filters');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAuditLogs = async (filters = {}) => {
+    setLoading(true);
+    setApiError('');
+    try {
+      let data;
+      if (Object.keys(filters).length > 0) {
+        data = await getFilteredAuditLogs(filters);
+        // If paginated, use data.auditLogs
+        setAuditData(data?.data?.auditLogs || []);
+      } else {
+        data = await getAllAuditLogs();
+        setAuditData(data?.data || []);
+      }
+    } catch (err) {
+      setApiError(err?.response?.data?.message || err.message || 'Failed to load audit logs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFilterAudit = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const filters = {
+      actionType: form.actionType.value,
+      userId: form.userId.value,
+      dateFrom: form.dateFrom.value,
+      recordType: form.recordType.value
+    };
+    loadAuditLogs(filters);
   };
 
   return (
@@ -49,7 +85,7 @@ function AuditTrail() {
       <FilterGroup onSubmit={handleFilterAudit}>
         <div className="form-group">
           <label className="form-label">Action Type</label>
-          <select className="form-select">
+          <select className="form-select" name="actionType">
             <option value="">All Actions</option>
             <option value="create">Create</option>
             <option value="update">Update</option>
@@ -59,21 +95,63 @@ function AuditTrail() {
         </div>
         <div className="form-group">
           <label className="form-label">User</label>
-          <select className="form-select">
+          <select className="form-select" name="userId">
             <option value="">All Users</option>
-            <option value="user-001">John Doe</option>
-            <option value="user-002">Jane Smith</option>
-            <option value="user-003">Mike Johnson</option>
+            {users.map(user => (
+              <option key={user.id} value={user.id}>{user.name || user.username}</option>
+            ))}
+          </select>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Record Type</label>
+          <select className="form-select" name="recordType">
+            <option value="">All Types</option>
+            {recordTypes.map(type => (
+              <option key={type} value={type}>{type}</option>
+            ))}
           </select>
         </div>
         <div className="form-group">
           <label className="form-label">Date From</label>
-          <input type="date" className="form-input" defaultValue="2025-06-01" />
+          <input type="date" className="form-input" name="dateFrom" defaultValue="2025-06-01" />
         </div>
         <div className="form-group" style={{ alignSelf: 'end' }}>
           <button type="submit" className="btn btn-primary">🔍 Filter</button>
         </div>
       </FilterGroup>
+      {apiError && (
+        <div style={{
+          background: '#fef2f2',
+          border: '1px solid #fecaca',
+          color: '#dc2626',
+          padding: '12px',
+          borderRadius: '6px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <span>❌</span>
+          <span>{apiError}</span>
+        </div>
+      )}
+      {loading && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #015998',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}></div>
+        </div>
+      )}
       <TableComponent
         headers={auditHeaders}
         data={auditData}
@@ -82,14 +160,21 @@ function AuditTrail() {
             <td>{row.timestamp}</td>
             <td>{row.user}</td>
             <td>
-              <span className={`status-badge status-${row.action.toLowerCase()}`}>{row.action}</span>
+              <span className={`status-badge status-${row.action?.toLowerCase()}`}>{row.action}</span>
             </td>
             <td>{row.recordType}</td>
             <td>{row.recordId}</td>
-            <td>{row.details}</td>
+            <td>{typeof row.details === "string" ? row.details : JSON.stringify(row.details)}</td>
           </>
         )}
       />
+      {/* CSS for animations */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
