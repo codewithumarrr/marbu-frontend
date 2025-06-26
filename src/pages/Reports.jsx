@@ -143,6 +143,15 @@ function Reports() {
           </select>
         </div>
         <div className="form-group">
+          <label className="form-label">Job Wise</label>
+          <select className="form-select" name="siteId" defaultValue={defaultFilters.siteId}>
+            <option value="">All Jobs</option>
+            {sites.map(site => (
+              <option key={site.site_id || site.id} value={site.site_id || site.id}>{site.site_name || site.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="form-group">
           <label className="form-label">Vehicle Type</label>
           <select className="form-select" name="vehicleType" defaultValue={defaultFilters.vehicleType}>
             <option value="">All Types</option>

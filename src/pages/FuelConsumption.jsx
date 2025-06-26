@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Select from 'react-select';
 import "../styles/pages.css";
 import {
   getAllDieselConsumption,
@@ -12,9 +13,9 @@ import {
   getOperatorEmployees,
   saveThumbprint
 } from "../services/fuelConsumptionService.js";
- import { generateInvoiceFromConsumption } from "../services/invoicesService.js";
- import { generateInvoiceExcel } from "../utils/excelExport.js";
- 
+import { generateInvoiceFromConsumption } from "../services/invoicesService.js";
+import { generateInvoiceExcel } from "../utils/excelExport.js";
+
 function FuelConsumption() {
   const [formData, setFormData] = useState({
     vehicleTypes: [],
@@ -30,7 +31,7 @@ function FuelConsumption() {
     vehicleEquipmentType: '',
     plateNumberMachineId: '',
     dateTime: new Date().toISOString().slice(0, 16),
-    jobNumber: '',
+    jobNumber: [],
     operatorName: '',
     operatorMobile: '',
     employeeNumber: '',
@@ -42,6 +43,7 @@ function FuelConsumption() {
   });
   const [formErrors, setFormErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [previousOdometerReadings, setPreviousOdometerReadings] = useState([]);
 
   // Load form data on component mount
   useEffect(() => {
@@ -123,6 +125,17 @@ function FuelConsumption() {
     }
   };
 
+  // Multi-select handler for jobNumber
+  const handleJobNumberChange = (selectedOptions) => {
+    setFormValues(prev => ({
+      ...prev,
+      jobNumber: selectedOptions ? selectedOptions.map(opt => opt.value) : []
+    }));
+    if (formErrors.jobNumber) {
+      setFormErrors(prev => ({ ...prev, jobNumber: '' }));
+    }
+  };
+
   const validateForm = () => {
     const errors = {};
 
@@ -135,8 +148,8 @@ function FuelConsumption() {
     if (!formValues.dateTime) {
       errors.dateTime = 'Date and time is required';
     }
-    if (!formValues.jobNumber) {
-      errors.jobNumber = 'Job number is required';
+    if (!formValues.jobNumber || formValues.jobNumber.length === 0) {
+      errors.jobNumber = 'At least one job number is required';
     }
     if (!formValues.operatorName) {
       errors.operatorName = 'Operator/Driver name is required';
@@ -180,7 +193,7 @@ function FuelConsumption() {
         vehicleEquipmentType: '',
         plateNumberMachineId: '',
         dateTime: new Date().toISOString().slice(0, 16),
-        jobNumber: '',
+        jobNumber: [],
         operatorName: '',
         operatorMobile: '',
         employeeNumber: '',
@@ -199,8 +212,6 @@ function FuelConsumption() {
       setIsLoading(false);
     }
   };
-
- 
 
   const generateInvoice = async () => {
     setIsLoading(true);
@@ -239,7 +250,7 @@ function FuelConsumption() {
       vehicleEquipmentType: '',
       plateNumberMachineId: '',
       dateTime: new Date().toISOString().slice(0, 16),
-      jobNumber: '',
+      jobNumber: [],
       operatorName: '',
       operatorMobile: '',
       employeeNumber: '',
@@ -253,6 +264,89 @@ function FuelConsumption() {
     setSubmitted(false);
     setVehicles([]);
   };
+
+  // Prepare job options for react-select
+  const jobOptions = (formData.jobs && formData.jobs.length > 0)
+    ? formData.jobs.map(job => ({ value: job.job_number, label: job.job_number }))
+    : [
+        { value: 'job-001', label: 'Job 001' },
+        { value: 'job-002', label: 'Job 002' },
+        { value: 'job-003', label: 'Job 003' }
+      ];
+
+  // Custom styles for react-select to match .form-input
+  const customSelectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      minHeight: '48px',
+      borderRadius: '8px',
+      border: '2px solid #e2e8f0',
+      boxShadow: state.isFocused ? '0 0 0 3px rgba(8, 145, 178, 0.1)' : 'none',
+      fontSize: '16px',
+      paddingLeft: '0',
+      background: 'white',
+    }),
+    valueContainer: (provided) => ({
+      ...provided,
+      padding: '0 16px',
+    }),
+    input: (provided) => ({
+      ...provided,
+      margin: '0',
+      padding: '0',
+    }),
+    multiValue: (provided) => ({
+      ...provided,
+      background: '#e2e8f0',
+      borderRadius: '6px',
+      padding: '2px 6px',
+      fontSize: '15px',
+    }),
+    multiValueLabel: (provided) => ({
+      ...provided,
+      color: '#015998',
+      fontWeight: 500,
+    }),
+    multiValueRemove: (provided) => ({
+      ...provided,
+      color: '#dc2626',
+      ':hover': { background: '#fee2e2', color: '#b91c1c' },
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: '#a0aec0',
+      fontSize: '16px',
+    }),
+    menu: (provided) => ({
+      ...provided,
+      zIndex: 10,
+    }),
+  };
+
+  // Odometer input handlers
+  const handleOdometerBlur = () => {
+    if (
+      formValues.odometerReading &&
+      !isNaN(formValues.odometerReading) &&
+      (previousOdometerReadings.length === 0 || previousOdometerReadings[0] !== formValues.odometerReading)
+    ) {
+      setPreviousOdometerReadings(prev => [formValues.odometerReading, ...prev].slice(0, 3));
+    }
+  };
+  const handleOdometerKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleOdometerBlur();
+    }
+  };
+
+  // Calculate total of all previous readings plus current input
+  let odometerTotal = 0;
+  const prevSum = previousOdometerReadings.reduce((sum, val) => sum + parseFloat(val || 0), 0);
+  if (formValues.odometerReading && !isNaN(formValues.odometerReading)) {
+    odometerTotal = prevSum + parseFloat(formValues.odometerReading);
+  } else {
+    odometerTotal = prevSum;
+  }
 
   return (
     <div id="consumption" className="content-panel">
@@ -296,27 +390,7 @@ function FuelConsumption() {
       ) : (
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
-            <div className="form-group">
-              <label className="form-label">Vehicle/Equipment Type</label>
-              <select
-                className="form-select"
-                name="vehicleEquipmentType"
-                value={formValues.vehicleEquipmentType}
-                onChange={handleInputChange}
-                disabled={isLoading}
-                required
-              >
-                <option value="">Select Type</option>
-                {formData?.vehicleTypes?.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-              {submitted && formErrors.vehicleEquipmentType && (
-                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
-                  {formErrors.vehicleEquipmentType}
-                </div>
-              )}
-            </div>
+            
             <div className="form-group">
               <label className="form-label">Plate Number / Machine ID</label>
               <select
@@ -340,6 +414,28 @@ function FuelConsumption() {
                 </div>
               )}
             </div>
+
+            <div className="form-group">
+              <label className="form-label">Vehicle/Equipment Type</label>
+              <select
+                className="form-select"
+                name="vehicleEquipmentType"
+                value={formValues.vehicleEquipmentType}
+                onChange={handleInputChange}
+                disabled={isLoading}
+                required
+              >
+                <option value="">Select Type</option>
+                {formData?.vehicleTypes?.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+              {submitted && formErrors.vehicleEquipmentType && (
+                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
+                  {formErrors.vehicleEquipmentType}
+                </div>
+              )}
+            </div>
             <div className="form-group">
               <label className="form-label">Date & Time</label>
               <input
@@ -359,19 +455,19 @@ function FuelConsumption() {
             </div>
             <div className="form-group">
               <label className="form-label">Job Number</label>
-              <input
-                type="text"
-                className="form-input"
+              <Select
+                isMulti
                 name="jobNumber"
-                value={formValues.jobNumber}
-                onChange={handleInputChange}
-                disabled={isLoading}
-                required
+                options={jobOptions}
+                value={jobOptions.filter(opt => formValues.jobNumber.includes(opt.value))}
+                onChange={handleJobNumberChange}
+                classNamePrefix="react-select"
+                placeholder="Select job(s)"
+                isDisabled={isLoading}
+                styles={customSelectStyles}
               />
               {submitted && formErrors.jobNumber && (
-                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
-                  {formErrors.jobNumber}
-                </div>
+                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.jobNumber}</div>
               )}
             </div>
             <div className="form-group">
@@ -466,21 +562,35 @@ function FuelConsumption() {
             </div>
             <div className="form-group">
               <label className="form-label">Odometer (Km) / Equipment Hours</label>
-              <input
-                type="number"
-                className="form-input"
-                name="odometerReading"
-                value={formValues.odometerReading}
-                onChange={handleInputChange}
-                placeholder="Current reading"
-                min="0"
-                disabled={isLoading}
-                required
-              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexDirection: 'row-reverse', flexWrap: 'wrap', minWidth: 0 }}>
+                {/* Show only the latest previous reading and total to the right of the input */}
+                {previousOdometerReadings.length > 0 && (
+                  <span style={{ color: '#666', fontSize: 13, whiteSpace: 'nowrap' }}>
+                    Previous Reading: {previousOdometerReadings[0]}
+                  </span>
+                )}
+                {(odometerTotal > 0) && (
+                  <span style={{ color: '#015998', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>
+                    Total: {odometerTotal}
+                  </span>
+                )}
+                <input
+                  type="number"
+                  className="form-input"
+                  name="odometerReading"
+                  value={formValues.odometerReading}
+                  onChange={handleInputChange}
+                  onBlur={handleOdometerBlur}
+                  onKeyDown={handleOdometerKeyDown}
+                  placeholder="Current reading"
+                  min="0"
+                  disabled={isLoading}
+                  required
+                  style={{ flex: 1, minWidth: 0 }}
+                />
+              </div>
               {submitted && formErrors.odometerReading && (
-                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
-                  {formErrors.odometerReading}
-                </div>
+                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.odometerReading}</div>
               )}
             </div>
           </div>
@@ -521,14 +631,7 @@ function FuelConsumption() {
                 <>💾 Record Consumption</>
               )}
             </button>
-            <button
-              type="button"
-              className="btn btn-invoice"
-              onClick={generateInvoice}
-              disabled={isLoading}
-            >
-              📄 Generate Invoice
-            </button>
+            
             <button
               type="button"
               className="btn btn-secondary"
