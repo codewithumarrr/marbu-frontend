@@ -9,6 +9,7 @@ const navItems = [
   { id: 'reports', iconClass: 'fas fa-chart-line', label: 'Reports', path: '/reports' },
   { id: 'invoices', iconClass: 'fas fa-file-invoice-dollar', label: 'Invoices', path: '/invoices' },
   { id: 'audit', iconClass: 'fas fa-clipboard-list', label: 'Audit Trail', path: '/audit' },
+  { id: 'user-management', iconClass: 'fas fa-users-cog', label: 'User Management', path: '/user-management' },
 ];
 
 const NavigationTabs = () => {

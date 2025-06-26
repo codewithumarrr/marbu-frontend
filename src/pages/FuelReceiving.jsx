@@ -14,6 +14,19 @@ import {
 } from "../services/fuelReceivingService.js";
 import { generateReceivingInvoiceExcel } from "../utils/excelExport.js";
 
+// Mock data for recent records
+const recentRecords = [
+  {
+    receipt: 'RCP-2025-001',
+    date: '2025-06-17 09:30',
+    quantity: '2000 L',
+    tank: 'Tank A',
+    supplier: 'ABC Fuel Company',
+    receivedBy: 'Fareed Khan',
+  },
+  // Add more records as needed
+];
+
 function FuelReceiving() {
   const [formData, setFormData] = useState({
     tanks: [],
@@ -458,6 +471,103 @@ function FuelReceiving() {
           </div>
         </form>
       )}
+
+      {/* Recent Fuel Receiving Records Section */}
+      <div style={{
+        background: '#f4fafd',
+        borderRadius: 16,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
+        marginTop: 40,
+        padding: 0,
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          padding: '28px 32px 0 32px',
+        }}>
+          <div style={{
+            fontWeight: 800,
+            fontSize: 32,
+            color: '#23476a',
+            letterSpacing: 0.5,
+            marginBottom: 0,
+          }}>
+            Recent Fuel Receiving Records
+          </div>
+        </div>
+        <div style={{
+          width: '100%',
+          height: 5,
+          background: 'linear-gradient(90deg, #25b86f 0%, #2563eb 100%)',
+          borderRadius: 8,
+          margin: '10px 0 18px 0',
+        }} />
+        <div style={{ padding: '0 32px 32px 32px' }}>
+          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: 'transparent' }}>
+            <thead>
+              <tr style={{
+                background: 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)',
+                borderTopLeftRadius: 12,
+                borderTopRightRadius: 12,
+                boxShadow: '0 8px 32px 0 rgba(37,99,235,0.18), 0 1.5px 0 #e0e7ef',
+                zIndex: 10,
+                position: 'relative',
+                borderBottom: '3px solid #e0e7ef',
+                transform: 'translateY(-12px)',
+                marginBottom: 8,
+                boxSizing: 'border-box',
+                // Subtle inner shadow for depth
+                filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.10))',
+              }}>
+                <th style={{ color: '#fff', fontWeight: 800, fontSize: 18, padding: '16px 24px', border: 'none', borderTopLeftRadius: 12, textAlign: 'left', letterSpacing: 1.2, borderRight: '1.5px solid rgba(255,255,255,0.18)' }}>Receipt #</th>
+                <th style={{ color: '#fff', fontWeight: 800, fontSize: 18, padding: '16px 24px', border: 'none', textAlign: 'left', letterSpacing: 1.2, borderRight: '1.5px solid rgba(255,255,255,0.18)' }}>Date</th>
+                <th style={{ color: '#fff', fontWeight: 800, fontSize: 18, padding: '16px 24px', border: 'none', textAlign: 'left', letterSpacing: 1.2, borderRight: '1.5px solid rgba(255,255,255,0.18)' }}>Quantity</th>
+                <th style={{ color: '#fff', fontWeight: 800, fontSize: 18, padding: '16px 24px', border: 'none', textAlign: 'left', letterSpacing: 1.2, borderRight: '1.5px solid rgba(255,255,255,0.18)' }}>Tank</th>
+                <th style={{ color: '#fff', fontWeight: 800, fontSize: 18, padding: '16px 24px', border: 'none', textAlign: 'left', letterSpacing: 1.2, borderRight: '1.5px solid rgba(255,255,255,0.18)' }}>Supplier</th>
+                <th style={{ color: '#fff', fontWeight: 800, fontSize: 18, padding: '16px 24px', border: 'none', textAlign: 'left', letterSpacing: 1.2, borderRight: '1.5px solid rgba(255,255,255,0.18)' }}>Received By</th>
+                <th style={{ color: '#fff', fontWeight: 800, fontSize: 18, padding: '16px 24px', border: 'none', borderTopRightRadius: 12, textAlign: 'left', letterSpacing: 1.2 }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentRecords.map((rec, idx) => (
+                <tr key={idx} style={{
+                  background: '#fff',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  borderRadius: 10,
+                  marginTop: 8,
+                  marginBottom: 8,
+                  height: 60,
+                }}>
+                  <td style={{ padding: '14px 24px', fontWeight: 500, textAlign: 'left' }}>{rec.receipt}</td>
+                  <td style={{ padding: '14px 24px', textAlign: 'left' }}>{rec.date}</td>
+                  <td style={{ padding: '14px 24px', textAlign: 'left' }}>{rec.quantity}</td>
+                  <td style={{ padding: '14px 24px', textAlign: 'left' }}>{rec.tank}</td>
+                  <td style={{ padding: '14px 24px', textAlign: 'left' }}>{rec.supplier}</td>
+                  <td style={{ padding: '14px 24px', textAlign: 'left' }}>{rec.receivedBy}</td>
+                  <td style={{ padding: '14px 24px', textAlign: 'left' }}>
+                    <button style={{
+                      background: 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '6px 22px',
+                      fontWeight: 700,
+                      fontSize: 15,
+                      cursor: 'pointer',
+                      letterSpacing: 1,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
+                    }}>
+                      <span style={{ fontSize: 18, marginRight: 4 }}>✏️</span> EDIT
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* CSS for animations */}
       <style>{`

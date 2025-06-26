@@ -10,6 +10,7 @@ import Invoices from "./pages/Invoices";
 import AuditTrail from "./pages/AuditTrail";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import UserManagement from "./pages/UserManagement";
 import { isAuthenticated, initializeServices } from "./services/index.js";
 import "./styles/App.css";
 
@@ -34,6 +35,7 @@ function App() {
         <Route path="/reports" element={<PrivateRoute><Reports /></PrivateRoute>} />
         <Route path="/invoices" element={<PrivateRoute><Invoices /></PrivateRoute>} />
         <Route path="/audit" element={<PrivateRoute><AuditTrail /></PrivateRoute>} />
+        <Route path="/user-management" element={<PrivateRoute><UserManagement /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </div>

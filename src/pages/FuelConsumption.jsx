@@ -43,7 +43,8 @@ function FuelConsumption() {
   });
   const [formErrors, setFormErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
-  const [previousOdometerReadings, setPreviousOdometerReadings] = useState([]);
+  const [odometerReadings, setOdometerReadings] = useState([]);
+  const [isRented, setIsRented] = useState(false);
 
   // Load form data on component mount
   useEffect(() => {
@@ -206,6 +207,7 @@ function FuelConsumption() {
       setSubmitted(false);
       setVehicles([]);
       loadFormData();
+      setOdometerReadings(prev => [...prev, Number(formValues.odometerReading)]);
     } catch (err) {
       setError(err?.response?.data?.message || err.message || 'Error creating fuel consumption');
     } finally {
@@ -328,9 +330,9 @@ function FuelConsumption() {
     if (
       formValues.odometerReading &&
       !isNaN(formValues.odometerReading) &&
-      (previousOdometerReadings.length === 0 || previousOdometerReadings[0] !== formValues.odometerReading)
+      (odometerReadings.length === 0 || odometerReadings[odometerReadings.length - 1] !== formValues.odometerReading)
     ) {
-      setPreviousOdometerReadings(prev => [formValues.odometerReading, ...prev].slice(0, 3));
+      setOdometerReadings(prev => [...prev, Number(formValues.odometerReading)]);
     }
   };
   const handleOdometerKeyDown = (e) => {
@@ -340,13 +342,14 @@ function FuelConsumption() {
   };
 
   // Calculate total of all previous readings plus current input
-  let odometerTotal = 0;
-  const prevSum = previousOdometerReadings.reduce((sum, val) => sum + parseFloat(val || 0), 0);
-  if (formValues.odometerReading && !isNaN(formValues.odometerReading)) {
-    odometerTotal = prevSum + parseFloat(formValues.odometerReading);
-  } else {
-    odometerTotal = prevSum;
-  }
+  const odometerTotal = odometerReadings.reduce((sum, val) => sum + parseFloat(val || 0), 0);
+
+  // Add handler for rented checkbox
+  const handleRentedChange = (e) => {
+    setIsRented(e.target.checked);
+  };
+
+  const previousOdometer = odometerReadings.length > 0 ? odometerReadings[odometerReadings.length - 1] : null;
 
   return (
     <div id="consumption" className="content-panel">
@@ -501,13 +504,22 @@ function FuelConsumption() {
                 required
               />
               {submitted && formErrors.operatorMobile && (
-                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
-                  {formErrors.operatorMobile}
-                </div>
+                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.operatorMobile}</div>
               )}
             </div>
+            <div className="form-group" style={{ alignItems: 'center', marginTop: 40, marginBottom: 8 }}>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14 }}>
+                <input
+                  type="checkbox"
+                  checked={isRented}
+                  onChange={handleRentedChange}
+                  style={{ width: 18, height: 18, marginRight: 8 }}
+                />
+                Rented Vehicle
+              </label>
+            </div>
             <div className="form-group">
-              <label className="form-label">Employee Number</label>
+              <label className="form-label">{isRented ? 'Employee ID' : 'Employee Number'}</label>
               <input
                 type="text"
                 className="form-input"
@@ -518,9 +530,7 @@ function FuelConsumption() {
                 required
               />
               {submitted && formErrors.employeeNumber && (
-                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
-                  {formErrors.employeeNumber}
-                </div>
+                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.employeeNumber}</div>
               )}
             </div>
             <div className="form-group">
@@ -562,18 +572,13 @@ function FuelConsumption() {
             </div>
             <div className="form-group">
               <label className="form-label">Odometer (Km) / Equipment Hours</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexDirection: 'row-reverse', flexWrap: 'wrap', minWidth: 0 }}>
-                {/* Show only the latest previous reading and total to the right of the input */}
-                {previousOdometerReadings.length > 0 && (
-                  <span style={{ color: '#666', fontSize: 13, whiteSpace: 'nowrap' }}>
-                    Previous Reading: {previousOdometerReadings[0]}
-                  </span>
-                )}
-                {(odometerTotal > 0) && (
-                  <span style={{ color: '#015998', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>
-                    Total: {odometerTotal}
-                  </span>
-                )}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 16,
+                minWidth: 0
+              }}>
                 <input
                   type="number"
                   className="form-input"
@@ -586,8 +591,20 @@ function FuelConsumption() {
                   min="0"
                   disabled={isLoading}
                   required
-                  style={{ flex: 1, minWidth: 0 }}
+                  style={{ width: 220, minWidth: 0 }}
                 />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 120 }}>
+                  {previousOdometer !== null && (
+                    <span style={{ color: '#666', fontSize: 13, whiteSpace: 'nowrap' }}>
+                      Previous Reading: {previousOdometer}
+                    </span>
+                  )}
+                  {(odometerTotal > 0) && (
+                    <span style={{ color: '#015998', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>
+                      Total: {odometerTotal}
+                    </span>
+                  )}
+                </div>
               </div>
               {submitted && formErrors.odometerReading && (
                 <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.odometerReading}</div>
