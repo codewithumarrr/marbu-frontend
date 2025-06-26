@@ -13,6 +13,7 @@ import {
   saveThumbprint
 } from "../services/fuelConsumptionService.js";
  import { generateInvoiceFromConsumption } from "../services/invoicesService.js";
+ import { generateInvoiceExcel } from "../utils/excelExport.js";
  
 function FuelConsumption() {
   const [formData, setFormData] = useState({
@@ -206,10 +207,26 @@ function FuelConsumption() {
     setError('');
     setSuccessMessage('');
     try {
-      // You may want to pass filters or job/site info as needed
-      const response = await generateInvoiceFromConsumption({});
-      setSuccessMessage('Invoice generated successfully!');
-      // Optionally, show invoice details: response.invoice_number, etc.
+      // Generate invoice with default parameters - last 30 days
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+      
+      const response = await generateInvoiceFromConsumption({
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        siteId: formValues.siteId || 1,
+        jobId: formValues.jobNumber ? parseInt(formValues.jobNumber) : null,
+        generatedByUserId: "EMP001" // You might want to get this from user context
+      });
+      
+      if (response?.data?.invoice?.invoice_number) {
+        // Generate and download Excel file
+        await generateInvoiceExcel(response.data);
+        setSuccessMessage(`Invoice ${response.data.invoice.invoice_number} generated successfully! Total: QAR ${response.data.totalAmount.toFixed(2)} - Excel file downloaded`);
+      } else {
+        setSuccessMessage('Invoice generated successfully!');
+      }
     } catch (err) {
       setError(err?.response?.data?.message || err.message || 'Error generating invoice');
     } finally {

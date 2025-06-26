@@ -12,6 +12,7 @@ import {
   getActiveSuppliers,
   generateInvoiceFromReceiving
 } from "../services/fuelReceivingService.js";
+import { generateReceivingInvoiceExcel } from "../utils/excelExport.js";
 
 function FuelReceiving() {
   const [formData, setFormData] = useState({
@@ -173,10 +174,25 @@ function FuelReceiving() {
     setError('');
     setSuccessMessage('');
     try {
-      // You may want to pass filters or site info as needed
-      const response = await generateInvoiceFromReceiving({});
-      setSuccessMessage('Invoice generated successfully!');
-      // Optionally, show invoice details: response.invoice_number, etc.
+      // Generate invoice with default parameters - last 30 days
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+      
+      const response = await generateInvoiceFromReceiving({
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        siteId: formValues.siteId || 1,
+        generatedByUserId: "EMP001" // You might want to get this from user context
+      });
+      
+      if (response?.data?.invoice?.invoice_number) {
+        // Generate and download Excel file
+        await generateReceivingInvoiceExcel(response.data);
+        setSuccessMessage(`Invoice ${response.data.invoice.invoice_number} generated successfully! Total: QAR ${response.data.totalAmount.toFixed(2)} - Excel file downloaded`);
+      } else {
+        setSuccessMessage('Invoice generated successfully!');
+      }
     } catch (err) {
       setError(err?.response?.data?.message || err.message || 'Error generating invoice');
     } finally {
