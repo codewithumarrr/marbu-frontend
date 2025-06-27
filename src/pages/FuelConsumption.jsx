@@ -15,6 +15,7 @@ import {
 } from "../services/fuelConsumptionService.js";
 import { generateInvoiceFromConsumption } from "../services/invoicesService.js";
 import { generateInvoiceExcel } from "../utils/excelExport.js";
+import { startAuthentication } from '@simplewebauthn/browser';
 
 function FuelConsumption() {
   const [formData, setFormData] = useState({
@@ -224,7 +225,7 @@ function FuelConsumption() {
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 30);
-      
+
       const response = await generateInvoiceFromConsumption({
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
@@ -232,7 +233,7 @@ function FuelConsumption() {
         jobId: formValues.jobNumber ? parseInt(formValues.jobNumber) : null,
         generatedByUserId: "EMP001" // You might want to get this from user context
       });
-      
+
       if (response?.data?.invoice?.invoice_number) {
         // Generate and download Excel file
         await generateInvoiceExcel(response.data);
@@ -271,10 +272,10 @@ function FuelConsumption() {
   const jobOptions = (formData.jobs && formData.jobs.length > 0)
     ? formData.jobs.map(job => ({ value: job.job_number, label: job.job_number }))
     : [
-        { value: 'job-001', label: 'Job 001' },
-        { value: 'job-002', label: 'Job 002' },
-        { value: 'job-003', label: 'Job 003' }
-      ];
+      { value: 'job-001', label: 'Job 001' },
+      { value: 'job-002', label: 'Job 002' },
+      { value: 'job-003', label: 'Job 003' }
+    ];
 
   // Custom styles for react-select to match .form-input
   const customSelectStyles = {
@@ -351,6 +352,45 @@ function FuelConsumption() {
 
   const previousOdometer = odometerReadings.length > 0 ? odometerReadings[odometerReadings.length - 1] : null;
 
+  const WebAuthnButton = () => {
+    const handleWebAuthn = async () => {
+      try {
+        // In a real app, get this from your backend!
+        const optionsFromServer = {
+          challenge: Uint8Array.from('random-challenge', c => c.charCodeAt(0)),
+          allowCredentials: [],
+          timeout: 60000,
+          userVerification: 'preferred',
+          rpId: window.location.hostname,
+        };
+
+        const result = await startAuthentication(optionsFromServer);
+        alert('Authentication successful! (See console for details)');
+        console.log('WebAuthn result:', result);
+      } catch (err) {
+        alert('Authentication failed or cancelled.');
+        console.error(err);
+      }
+    };
+
+    return (
+      <div
+        className="thumbprint-pad"
+        style={{
+          border: '2px dashed #25b86f',
+          borderRadius: '8px',
+          padding: '12px',
+          textAlign: 'center',
+          cursor: 'pointer',
+          background: '#f9f9f9'
+        }}
+        onClick={handleWebAuthn}
+      >
+        <span>🔒 Authenticate with Fingerprint / Face / PIN</span>
+      </div>
+    );
+  };
+
   return (
     <div id="consumption" className="content-panel">
       <h2 style={{ marginBottom: '20px', color: '#015998' }}>Fuel Consumption Entry</h2>
@@ -393,7 +433,7 @@ function FuelConsumption() {
       ) : (
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
-            
+
             <div className="form-group">
               <label className="form-label">Plate Number / Machine ID</label>
               <select
@@ -473,6 +513,23 @@ function FuelConsumption() {
                 <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.jobNumber}</div>
               )}
             </div>
+
+            <div className="form-group">
+              <label className="form-label">{isRented ? 'Employee ID' : 'Employee Number'}</label>
+              <input
+                type="text"
+                className="form-input"
+                name="employeeNumber"
+                value={formValues.employeeNumber}
+                onChange={handleInputChange}
+                disabled={isLoading}
+                required
+              />
+              {submitted && formErrors.employeeNumber && (
+                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.employeeNumber}</div>
+              )}
+            </div>
+            
             <div className="form-group">
               <label className="form-label">Operator/Driver Name</label>
               <input
@@ -507,6 +564,7 @@ function FuelConsumption() {
                 <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.operatorMobile}</div>
               )}
             </div>
+
             <div className="form-group" style={{ alignItems: 'center', marginTop: 40, marginBottom: 8 }}>
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14 }}>
                 <input
@@ -518,21 +576,9 @@ function FuelConsumption() {
                 Rented Vehicle
               </label>
             </div>
-            <div className="form-group">
-              <label className="form-label">{isRented ? 'Employee ID' : 'Employee Number'}</label>
-              <input
-                type="text"
-                className="form-input"
-                name="employeeNumber"
-                value={formValues.employeeNumber}
-                onChange={handleInputChange}
-                disabled={isLoading}
-                required
-              />
-              {submitted && formErrors.employeeNumber && (
-                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.employeeNumber}</div>
-              )}
-            </div>
+
+           
+
             <div className="form-group">
               <label className="form-label">Tank Source</label>
               <input
@@ -613,20 +659,7 @@ function FuelConsumption() {
           </div>
           <div className="form-group" style={{ marginBottom: '20px' }}>
             <label className="form-label">Operator Thumbprint Authentication</label>
-            <div
-              className={`thumbprint-pad`}
-              style={{
-                border: '2px dashed #25b86f',
-                borderRadius: '8px',
-                padding: '12px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                background: '#f9f9f9'
-              }}
-              onClick={() => alert('Thumbprint capture not implemented in demo')}
-            >
-              <span>👆 Touch here to capture thumbprint</span>
-            </div>
+            <WebAuthnButton />
           </div>
           <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
             <button type="submit" className="btn btn-primary" disabled={isLoading}>
@@ -648,7 +681,7 @@ function FuelConsumption() {
                 <>💾 Record Consumption</>
               )}
             </button>
-            
+
             <button
               type="button"
               className="btn btn-secondary"

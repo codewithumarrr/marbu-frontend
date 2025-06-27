@@ -11,6 +11,7 @@ import {
   emailReport
 } from "../services/reportsService.js";
 import jsPDF from "jspdf";
+import WebAuthnButton from '../components/WebAuthnButton';
 
 function Reports() {
   const reportHeaders = [
@@ -270,6 +271,7 @@ function Reports() {
           }}
         >📧 Email Report</button>
       </div>
+      <WebAuthnButton />
       {apiError && (
         <div style={{
           background: '#fef2f2',

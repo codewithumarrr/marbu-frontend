@@ -229,11 +229,11 @@ const UserManagement = () => {
               )}
             </div>
             <div className="form-group">
-              <label className="form-label" style={{ fontSize: 16, fontWeight: 600 }}>Employee ID</label>
+              <label className="form-label" style={{ fontSize: 16, fontWeight: 600 }}>Employee Number</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type="text"
-                  placeholder="Enter Employee ID"
+                  placeholder="Enter Employee Number"
                   value={employeeNumber}
                   onChange={e => setEmployeeNumber(e.target.value)}
                   style={{
@@ -392,7 +392,7 @@ const UserManagement = () => {
                 <thead>
                   <tr style={{ background: 'linear-gradient(90deg, #25b86f 0%, #2563eb 100%)' }}>
                     <th style={{ color: '#fff', fontWeight: 700, padding: '12px 8px', border: 'none' }}>Name</th>
-                    <th style={{ color: '#fff', fontWeight: 700, padding: '12px 8px', border: 'none' }}>Employee ID</th>
+                    <th style={{ color: '#fff', fontWeight: 700, padding: '12px 8px', border: 'none' }}>Employee Number</th>
                     <th style={{ color: '#fff', fontWeight: 700, padding: '12px 8px', border: 'none' }}>Mobile</th>
                     <th style={{ color: '#fff', fontWeight: 700, padding: '12px 8px', border: 'none' }}>Role</th>
                     <th style={{ color: '#fff', fontWeight: 700, padding: '12px 8px', border: 'none' }}>Site</th>
