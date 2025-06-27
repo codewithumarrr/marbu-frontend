@@ -12,10 +12,30 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import UserManagement from "./pages/UserManagement";
 import { isAuthenticated, initializeServices } from "./services/index.js";
+import { useUserStore } from "./store/userStore.js";
 import "./styles/App.css";
 
-function PrivateRoute({ children }) {
-  return isAuthenticated() ? children : <Navigate to="/login" replace />;
+function PrivateRoute({ children, allowedRoles = [] }) {
+  const { user, profile } = useUserStore();
+  
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // If no specific roles required, just check authentication
+  if (allowedRoles.length === 0) {
+    return children;
+  }
+
+  // Check if user has required role
+  const currentUser = profile || user;
+  const userRole = currentUser?.role?.toLowerCase();
+  
+  if (!allowedRoles.includes(userRole)) {
+    return <Navigate to="/" replace />; // Redirect to dashboard if no access
+  }
+
+  return children;
 }
 
 function App() {
@@ -29,13 +49,13 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-        <Route path="/receiving" element={<PrivateRoute><FuelReceiving /></PrivateRoute>} />
-        <Route path="/consumption" element={<PrivateRoute><FuelConsumption /></PrivateRoute>} />
-        <Route path="/reports" element={<PrivateRoute><Reports /></PrivateRoute>} />
-        <Route path="/invoices" element={<PrivateRoute><Invoices /></PrivateRoute>} />
-        <Route path="/audit" element={<PrivateRoute><AuditTrail /></PrivateRoute>} />
-        <Route path="/user-management" element={<PrivateRoute><UserManagement /></PrivateRoute>} />
+        <Route path="/" element={<PrivateRoute allowedRoles={['diesel Manager', 'site incharge', 'admin']}><Dashboard /></PrivateRoute>} />
+        <Route path="/receiving" element={<PrivateRoute allowedRoles={['diesel Manager', 'admin']}><FuelReceiving /></PrivateRoute>} />
+        <Route path="/consumption" element={<PrivateRoute allowedRoles={['diesel Manager', 'site incharge', 'admin']}><FuelConsumption /></PrivateRoute>} />
+        <Route path="/reports" element={<PrivateRoute allowedRoles={['diesel Manager', 'admin']}><Reports /></PrivateRoute>} />
+        <Route path="/invoices" element={<PrivateRoute allowedRoles={['diesel Manager', 'admin']}><Invoices /></PrivateRoute>} />
+        <Route path="/audit" element={<PrivateRoute allowedRoles={['diesel Manager', 'admin']}><AuditTrail /></PrivateRoute>} />
+        <Route path="/user-management" element={<PrivateRoute allowedRoles={['admin']}><UserManagement /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </div>

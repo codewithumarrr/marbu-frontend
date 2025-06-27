@@ -1,67 +1,195 @@
 import api from './api.js';
+import { useUserStore } from '../store/userStore.js';
 
 // Login user
 export async function login(credentials) {
-  const response = await api.post('/auth/login', credentials);
-  if (response.data.accessToken) {
-    localStorage.setItem('accessToken', response.data.accessToken);
+  const { setAuth, setError } = useUserStore.getState();
+  
+  try {
+    const response = await api.post('/auth/login', credentials);
+    
+    if (response.data.status === 'success') {
+      setAuth({
+        accessToken: response.data.accessToken,
+        refreshToken: response.data.refreshToken,
+        user: response.data.data?.user
+      });
+    }
+    
+    return response.data;
+  } catch (error) {
+    setError(error.response?.data?.message || error.message);
+    throw error;
   }
-  if (response.data.refreshToken) {
-    localStorage.setItem('refreshToken', response.data.refreshToken);
-  }
-  localStorage.setItem('isLoggedIn', 'true');
-  return response.data;
 }
 
 // Register new user
 export async function register(userData) {
-  const response = await api.post('/auth/register', userData);
-  return response.data;
+  const { setError } = useUserStore.getState();
+  
+  try {
+    const response = await api.post('/auth/register', userData);
+    return response.data;
+  } catch (error) {
+    setError(error.response?.data?.message || error.message);
+    throw error;
+  }
 }
 
-// Get all roles for registration (correct endpoint)
+// Get all roles for registration
 export async function getAllRoles() {
   const response = await api.get('/roles');
   return response.data;
 }
 
 // Logout user
-export function logout() {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
-  localStorage.removeItem('isLoggedIn');
+export async function logout() {
+  const { clearAuth, getToken } = useUserStore.getState();
+  
+  try {
+    const token = getToken();
+    if (token) {
+      // Call backend logout endpoint
+      await api.post('/auth/logout');
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+  } finally {
+    // Clear auth state regardless of backend response
+    clearAuth();
+  }
 }
 
 // Get user profile
 export async function getProfile() {
-  const response = await api.get('/auth/profile');
-  return response.data;
+  const { setProfile, setError } = useUserStore.getState();
+  
+  try {
+    const response = await api.get('/auth/profile');
+    if (response.data.status === 'success') {
+      setProfile(response.data.data.user);
+    }
+    return response.data;
+  } catch (error) {
+    setError(error.response?.data?.message || error.message);
+    throw error;
+  }
 }
 
 // Refresh access token
 export async function refreshToken() {
-  const refreshToken = localStorage.getItem('refreshToken');
-  if (!refreshToken) throw new Error('No refresh token available');
-  const response = await api.post('/auth/refresh-token', { refreshToken });
-  if (response.data.accessToken) {
-    localStorage.setItem('accessToken', response.data.accessToken);
+  const { refreshToken: storedRefreshToken, updateToken, clearAuth } = useUserStore.getState();
+  
+  if (!storedRefreshToken) {
+    throw new Error('No refresh token available');
   }
-  return response.data;
+  
+  try {
+    const response = await api.post('/auth/refresh-token', { 
+      refreshToken: storedRefreshToken 
+    });
+    
+    if (response.data.accessToken) {
+      updateToken(response.data.accessToken);
+    }
+    
+    return response.data;
+  } catch (error) {
+    // If refresh fails, clear auth
+    clearAuth();
+    throw error;
+  }
 }
 
 // Check if user is authenticated
 export function isAuthenticated() {
-  const token = localStorage.getItem('accessToken');
-  const isLoggedIn = localStorage.getItem('isLoggedIn');
-  return !!(token && isLoggedIn === 'true');
+  const { isAuthenticated, accessToken } = useUserStore.getState();
+  return isAuthenticated && !!accessToken;
 }
 
 // Get current access token
 export function getAccessToken() {
-  return localStorage.getItem('accessToken');
+  return useUserStore.getState().accessToken;
 }
 
 // Get current refresh token
 export function getRefreshToken() {
-  return localStorage.getItem('refreshToken');
+  return useUserStore.getState().refreshToken;
+}
+
+// Get current user
+export function getCurrentUser() {
+  return useUserStore.getState().user;
+}
+
+// Get current profile
+export function getCurrentProfile() {
+  return useUserStore.getState().profile;
+}
+
+// User Management Functions
+
+// Get all users
+export async function getAllUsers() {
+  const { setError } = useUserStore.getState();
+  
+  try {
+    const response = await api.get('/users');
+    return response.data;
+  } catch (error) {
+    setError(error.response?.data?.message || error.message);
+    throw error;
+  }
+}
+
+// Get user by ID
+export async function getUserById(id) {
+  const { setError } = useUserStore.getState();
+  
+  try {
+    const response = await api.get(`/users/${id}`);
+    return response.data;
+  } catch (error) {
+    setError(error.response?.data?.message || error.message);
+    throw error;
+  }
+}
+
+// Update user by ID
+export async function updateUser(id, userData) {
+  const { setError } = useUserStore.getState();
+  
+  try {
+    const response = await api.put(`/users/${id}`, userData);
+    return response.data;
+  } catch (error) {
+    setError(error.response?.data?.message || error.message);
+    throw error;
+  }
+}
+
+// Delete user by ID
+export async function deleteUser(id) {
+  const { setError } = useUserStore.getState();
+  
+  try {
+    const response = await api.delete(`/users/${id}`);
+    return response.data;
+  } catch (error) {
+    setError(error.response?.data?.message || error.message);
+    throw error;
+  }
+}
+
+// Get user by employee number
+export async function getUserByEmployeeNumber(employeeNumber) {
+  const { setError } = useUserStore.getState();
+  
+  try {
+    const response = await api.get(`/users/employee/${employeeNumber}`);
+    return response.data;
+  } catch (error) {
+    setError(error.response?.data?.message || error.message);
+    throw error;
+  }
 }

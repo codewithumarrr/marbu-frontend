@@ -1,21 +1,38 @@
 import React from "react";
 import "../styles/components.css";
 import { NavLink } from "react-router-dom";
+import { useUserStore } from "../store/userStore.js";
 
-const navItems = [
-  { id: 'dashboard', iconClass: 'fas fa-tachometer-alt', label: 'Dashboard', path: '/' },
-  { id: 'receiving', iconClass: 'fas fa-truck-loading', label: 'Fuel Receiving', path: '/receiving' },
-  { id: 'consumption', iconClass: 'fas fa-gas-pump', label: 'Fuel Consumption', path: '/consumption' },
-  { id: 'reports', iconClass: 'fas fa-chart-line', label: 'Reports', path: '/reports' },
-  { id: 'invoices', iconClass: 'fas fa-file-invoice-dollar', label: 'Invoices', path: '/invoices' },
-  { id: 'audit', iconClass: 'fas fa-clipboard-list', label: 'Audit Trail', path: '/audit' },
-  { id: 'user-management', iconClass: 'fas fa-users-cog', label: 'User Management', path: '/user-management' },
+const allNavItems = [
+  { id: 'dashboard', iconClass: 'fas fa-tachometer-alt', label: 'Dashboard', path: '/', roles: ['diesel manager', 'site incharge', 'admin'] },
+  { id: 'receiving', iconClass: 'fas fa-truck-loading', label: 'Fuel Receiving', path: '/receiving', roles: ['diesel manager', 'admin'] },
+  { id: 'consumption', iconClass: 'fas fa-gas-pump', label: 'Fuel Consumption', path: '/consumption', roles: ['diesel manager', 'site incharge', 'admin'] },
+  { id: 'reports', iconClass: 'fas fa-chart-line', label: 'Reports', path: '/reports', roles: ['diesel manager', 'admin'] },
+  { id: 'invoices', iconClass: 'fas fa-file-invoice-dollar', label: 'Invoices', path: '/invoices', roles: ['diesel manager', 'admin'] },
+  { id: 'audit', iconClass: 'fas fa-clipboard-list', label: 'Audit Trail', path: '/audit', roles: ['diesel manager', 'admin'] },
+  { id: 'user-management', iconClass: 'fas fa-users-cog', label: 'User Management', path: '/user-management', roles: ['admin'] },
 ];
 
 const NavigationTabs = () => {
+  const { user, profile } = useUserStore();
+  
+  // Get current user role
+  const getCurrentUserRole = () => {
+    const currentUser = profile || user;
+    return currentUser?.role || 'Guest';
+  };
+
+  // Filter navigation items based on user role
+  const getVisibleNavItems = () => {
+    const userRole = getCurrentUserRole();
+    return allNavItems.filter(item => item.roles.includes(userRole));
+  };
+
+  const visibleNavItems = getVisibleNavItems();
+
   return (
     <div className="nav-tabs">
-      {navItems.map((tab) => (
+      {visibleNavItems.map((tab) => (
         <NavLink
           key={tab.id}
           to={tab.path}
