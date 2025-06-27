@@ -9,7 +9,6 @@ import Reports from "./pages/Reports";
 import Invoices from "./pages/Invoices";
 import AuditTrail from "./pages/AuditTrail";
 import Login from "./pages/Login";
-import Signup from "./pages/Signup";
 import UserManagement from "./pages/UserManagement";
 import { isAuthenticated, initializeServices } from "./services/index.js";
 import "./styles/App.css";
@@ -20,7 +19,7 @@ function PrivateRoute({ children }) {
 
 function App() {
   const location = useLocation();
-  const hideHeaderNav = location.pathname === '/login' || location.pathname === '/signup';
+  const hideHeaderNav = location.pathname === '/login';
 
   return (
     <div className="container">
@@ -28,7 +27,6 @@ function App() {
       {!hideHeaderNav && <NavigationTabs />}
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
         <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path="/receiving" element={<PrivateRoute><FuelReceiving /></PrivateRoute>} />
         <Route path="/consumption" element={<PrivateRoute><FuelConsumption /></PrivateRoute>} />

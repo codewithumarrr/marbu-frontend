@@ -206,8 +206,7 @@ const Login = () => {
           }
         `}</style>
         <div style={{ marginTop: 6, color: '#888', fontSize: 13 }}>
-          Don't have an account?{' '}
-          <Link to="/signup" style={{ color: '#25b86f', fontWeight: 600, textDecoration: 'none' }}>Create Account</Link>
+          {/* Removed signup link */}
         </div>
       </div>
     </div>
