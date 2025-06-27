@@ -13,11 +13,14 @@ import {
   getOperatorEmployees,
   saveThumbprint
 } from "../services/fuelConsumptionService.js";
+import { getUserByEmployeeNumber } from "../services/authService.js";
+import { useUserStore } from "../store/userStore.js";
 import { generateInvoiceFromConsumption } from "../services/invoicesService.js";
 import { generateInvoiceExcel } from "../utils/excelExport.js";
 import { startAuthentication } from '@simplewebauthn/browser';
 
 function FuelConsumption() {
+  const { user, profile } = useUserStore();
   const [formData, setFormData] = useState({
     vehicleTypes: [],
     tanks: [],
@@ -36,7 +39,7 @@ function FuelConsumption() {
     operatorName: '',
     operatorMobile: '',
     employeeNumber: '',
-    tankSource: '',
+    tankSource: user?.tanks[0]?.tank_name || '',
     quantity: '',
     odometerReading: '',
     thumbprintData: '',
@@ -47,11 +50,96 @@ function FuelConsumption() {
   const [odometerReadings, setOdometerReadings] = useState([]);
   const [isRented, setIsRented] = useState(false);
 
-  // Load form data on component mount
+  // Get current user role and info
+  const getCurrentUser = () => {
+    return profile || user;
+  };
+  
+  const isUserSiteIncharge = () => {
+    const currentUser = getCurrentUser();
+    return currentUser?.role === 'Site Incharge';
+  };
+
+  // Load form data on component mount and auto-fill for Site Incharge
   useEffect(() => {
     loadFormData();
+    autoFillForSiteIncharge();
     // eslint-disable-next-line
   }, []);
+
+  // Auto-fill form data for Site Incharge users
+  const autoFillForSiteIncharge = () => {
+    if (isUserSiteIncharge()) {
+      const currentUser = getCurrentUser();
+      setFormValues(prev => ({
+        ...prev,
+        employeeNumber: currentUser?.employeeNumber || '',
+        operatorName: currentUser?.name || '',
+        operatorMobile: currentUser?.mobile_number || '',
+        siteId: currentUser?.site_id || '',
+        tankSource: currentUser?.tanks && currentUser.tanks.length > 0 
+          ? currentUser.tanks[0].tank_name 
+          : ''
+      }));
+    }
+  };
+
+  // Handle employee number lookup
+  const handleEmployeeNumberLookup = async (employeeNumber) => {
+    if (!employeeNumber || employeeNumber.length < 3) return;
+    
+    try {
+      const response = await getUserByEmployeeNumber(employeeNumber);
+      if (response.status === 'success') {
+        const employeeData = response.data;
+        setFormValues(prev => ({
+          ...prev,
+          operatorName: employeeData.employeeName || '',
+          operatorMobile: employeeData.mobileNumber || ''
+        }));
+      }
+    } catch (err) {
+      // Silently handle errors - user might be typing
+      console.log('Employee lookup error:', err);
+    }
+  };
+
+  // Handle employee number change with lookup
+  const handleEmployeeNumberChange = (e) => {
+    const { value } = e.target;
+    setFormValues(prev => ({
+      ...prev,
+      employeeNumber: value
+    }));
+
+    // Clear field error when user starts typing
+    if (formErrors.employeeNumber) {
+      setFormErrors(prev => ({
+        ...prev,
+        employeeNumber: ''
+      }));
+    }
+
+    // Clear operator fields immediately when user starts typing
+    if (value !== formValues.employeeNumber) {
+      setFormValues(prev => ({
+        ...prev,
+        operatorName: '',
+        operatorMobile: ''
+      }));
+    }
+  };
+
+  // Use useEffect for debounced lookup
+  useEffect(() => {
+    if (formValues.employeeNumber && formValues.employeeNumber.length >= 3) {
+      const timeoutId = setTimeout(() => {
+        handleEmployeeNumberLookup(formValues.employeeNumber);
+      }, 800); // Increased debounce time to 800ms
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formValues.employeeNumber]);
 
   const loadFormData = async () => {
     setIsLoading(true);
@@ -231,7 +319,7 @@ function FuelConsumption() {
         endDate: endDate.toISOString(),
         siteId: formValues.siteId || 1,
         jobId: formValues.jobNumber ? parseInt(formValues.jobNumber) : null,
-        generatedByUserId: "EMP001" // You might want to get this from user context
+        generatedByUserId: formValues?.employeeNumber,
       });
 
       if (response?.data?.invoice?.invoice_number) {
@@ -267,7 +355,6 @@ function FuelConsumption() {
     setSubmitted(false);
     setVehicles([]);
   };
-
   // Prepare job options for react-select
   const jobOptions = (formData.jobs && formData.jobs.length > 0)
     ? formData.jobs.map(job => ({ value: job.job_number, label: job.job_number }))
@@ -521,8 +608,9 @@ function FuelConsumption() {
                 className="form-input"
                 name="employeeNumber"
                 value={formValues.employeeNumber}
-                onChange={handleInputChange}
-                disabled={isLoading}
+                onChange={handleEmployeeNumberChange}
+                disabled={isLoading || isUserSiteIncharge()}
+                placeholder={isUserSiteIncharge() ? "Auto-filled (Site Incharge)" : "Enter employee number"}
                 required
               />
               {submitted && formErrors.employeeNumber && (
@@ -565,7 +653,7 @@ function FuelConsumption() {
               )}
             </div>
 
-            <div className="form-group" style={{ alignItems: 'center', marginTop: 40, marginBottom: 8 }}>
+            <div className="form-group" style={{  marginTop: 40, marginBottom: 8 }}>
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14 }}>
                 <input
                   type="checkbox"
@@ -587,6 +675,7 @@ function FuelConsumption() {
                 name="tankSource"
                 value={formValues.tankSource}
                 onChange={handleInputChange}
+                readOnly={true}
                 disabled={isLoading}
                 required
               />

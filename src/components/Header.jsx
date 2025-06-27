@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import '../styles/components.css';
-  //import logo from '../assets/logo.jpg';
-import userPlaceholder from '../assets/user-placeholder.png';
+import { useUserStore } from '../store/userStore.js';
+import { logout } from '../services/authService.js';
 
 const Header = () => {
+  const { user, profile } = useUserStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const profileRef = useRef(null);
 
@@ -28,17 +29,29 @@ const Header = () => {
     setDropdownOpen((open) => !open);
   };
 
-  const handleLogout = () => {
-    // Add your logout logic here
+  const handleLogout = async () => {
     setDropdownOpen(false);
-    // For now, just alert
-    alert('Logged out!');
+    try {
+      await logout();
+      // Redirect will be handled by the auth service
+      window.location.href = '/login';
+    } catch (err) {
+      console.error('Logout error:', err);
+      // Force redirect even if logout fails
+      window.location.href = '/login';
+    }
   };
 
-  const handleChangePhoto = () => {
-    // Add your change photo logic here
-    setDropdownOpen(false);
-    alert('Change photo clicked!');
+  // Get display name for user
+  const getDisplayName = () => {
+    const currentUser = profile || user;
+    return currentUser?.name || 'Fareed Khan'; // Fallback to hardcoded name
+  };
+
+  // Get user role
+  const getUserRole = () => {
+    const currentUser = profile || user;
+    return currentUser?.role || 'Site Manager'; // Fallback to hardcoded role
   };
 
   return (
@@ -58,8 +71,8 @@ const Header = () => {
               <img src="https://picsum.photos/200" alt="User" />
             </div>
             <div className="user-details">
-              <div className="user-name">Fareed Khan</div>
-              <div className="user-designation">Site Manager</div>
+              <div className="user-name">{getDisplayName()}</div>
+              <div className="user-designation">{getUserRole()}</div>
             </div>
           </div>
           {/* Dropdown menu */}

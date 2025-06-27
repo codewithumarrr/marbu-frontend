@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllRoles } from '../services/authService.js';
+import { getAllRoles, register, getAllUsers, updateUser, deleteUser, getUserByEmployeeNumber } from '../services/authService.js';
 import { getReportSites } from '../services/reportsService.js';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 
@@ -21,51 +21,48 @@ const UserManagement = () => {
   const [submitted, setSubmitted] = useState(false);
   const [apiError, setApiError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState(() => {
-    const stored = localStorage.getItem('recentUsers');
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
-  const [editIndex, setEditIndex] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [editUserId, setEditUserId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Save users to localStorage whenever users change
   useEffect(() => {
-    localStorage.setItem('recentUsers', JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
-    // Load sites for dropdown
-    const fetchSites = async () => {
+    // Load initial data
+    const fetchInitialData = async () => {
       try {
-        const res = await getReportSites();
-        setSites(res?.data || []);
-      } catch (err) {}
+        const [sitesRes, rolesRes, usersRes] = await Promise.all([
+          getReportSites(),
+          getAllRoles(),
+          getAllUsers()
+        ]);
+        setSites(sitesRes?.data || []);
+        setRoles(rolesRes || []);
+        setUsers(usersRes?.data || []);
+      } catch (err) {
+        setApiError('Failed to load initial data');
+      }
     };
-    fetchSites();
-    // Load roles for dropdown
-    const fetchRoles = async () => {
-      try {
-        const res = await getAllRoles();
-        setRoles(res || []);
-      } catch (err) {}
-    };
-    fetchRoles();
+    fetchInitialData();
   }, []);
 
-  const handleSubmit = (e) => {
+  // Load users from API
+  const loadUsers = async () => {
+    try {
+      const response = await getAllUsers();
+      setUsers(response?.data || []);
+    } catch (err) {
+      setApiError('Failed to load users');
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
     setSubmitted(true);
     setApiError('');
     let valid = true;
+    
     if (!name.trim()) {
       setNameError('Name is required');
       valid = false;
@@ -84,7 +81,7 @@ const UserManagement = () => {
     } else {
       setMobileError('');
     }
-    if (!password.trim() && editIndex === null) {
+    if (!password.trim() && editUserId === null) {
       setPasswordError('Password is required');
       valid = false;
     } else {
@@ -102,62 +99,88 @@ const UserManagement = () => {
     } else {
       setSiteError('');
     }
+    
     if (!valid) return;
-    if (editIndex !== null) {
-      // Update existing user
-      setUsers(prev => prev.map((u, i) => i === editIndex ? {
-        ...u,
-        name,
-        employeeNumber,
-        mobileNumber,
-        roleName,
-        siteId,
-        siteName: sites.find(s => s.site_id == siteId)?.site_name || siteId,
-        roleLabel: roles.find(r => r.role_name === roleName)?.role_name || roleName
-      } : u));
-      setEditIndex(null);
-      setShowUpdateModal(true);
-    } else {
-      // Add user to local users array
-      setUsers(prev => [
-        ...prev,
-        {
-          name,
-          employeeNumber,
-          mobileNumber,
-          roleName,
-          siteId,
-          siteName: sites.find(s => s.site_id == siteId)?.site_name || siteId,
-          roleLabel: roles.find(r => r.role_name === roleName)?.role_name || roleName
-        }
-      ]);
-      setShowCreateModal(true);
+
+    setLoading(true);
+    try {
+      // Get role_id from role name
+      const selectedRole = roles.find(r => r.role_name === roleName);
+      const role_id = selectedRole?.role_id;
+      
+      if (!role_id) {
+        setApiError('Invalid role selected');
+        setLoading(false);
+        return;
+      }
+
+      if (editUserId !== null) {
+        // Update existing user - use database field names
+        const updateData = {
+          employee_number: employeeNumber,
+          employee_name: name,
+          mobile_number: mobileNumber,
+          role_id: role_id,
+          site_id: parseInt(siteId),
+          ...(password && { password })
+        };
+        await updateUser(editUserId, updateData);
+        setEditUserId(null);
+        setShowUpdateModal(true);
+      } else {
+        // Create new user using registration API - use registration schema field names
+        const createData = {
+          employeeNumber: employeeNumber,  // registration API expects this format
+          name: name,                      // registration API expects this format
+          role: roleName,                  // registration API expects role name, not ID
+          mobile_number: mobileNumber,     // this is correct
+          site_id: parseInt(siteId),       // this is correct
+          password: password               // this is correct
+        };
+        await register(createData);
+        setShowCreateModal(true);
+      }
+
+      // Reset form
+      setName('');
+      setEmployeeNumber('');
+      setMobileNumber('');
+      setPassword('');
+      setRoleName('');
+      setSiteId('');
+      setSubmitted(false);
+      
+      // Reload users list
+      await loadUsers();
+      
+    } catch (err) {
+      setApiError(err?.response?.data?.message || err.message || 'Error saving user');
+    } finally {
+      setLoading(false);
     }
-    // Reset form
-    setName('');
-    setEmployeeNumber('');
-    setMobileNumber('');
-    setPassword('');
-    setRoleName('');
-    setSiteId('');
-    setSubmitted(false);
   };
 
-  const handleEdit = (idx) => {
-    const user = users[idx];
-    setName(user.name);
-    setEmployeeNumber(user.employeeNumber);
-    setMobileNumber(user.mobileNumber);
+  const handleEdit = (user) => {
+    setName(user.employee_name);
+    setEmployeeNumber(user.employee_number);
+    setMobileNumber(user.mobile_number);
     setPassword(''); // Do not prefill password for security
-    setRoleName(user.roleName);
-    setSiteId(user.siteId);
-    setEditIndex(idx);
+    setRoleName(user.role_name);
+    setSiteId(user.site_id);
+    setEditUserId(user.employee_id);
     setSubmitted(false);
   };
 
-  const handleDelete = (idx) => {
-    setUsers(prev => prev.filter((_, i) => i !== idx));
-    setShowDeleteModal(true);
+  const handleDelete = async (user) => {
+    if (window.confirm(`Are you sure you want to delete user ${user.employee_name}?`)) {
+      try {
+        await deleteUser(user.employee_id);
+        setShowDeleteModal(true);
+        await loadUsers(); // Reload users list
+      } catch (err) {
+        setApiError(err?.response?.data?.message || err.message || 'Error deleting user');
+      }
+    }
   };
 
   return (
@@ -360,7 +383,7 @@ const UserManagement = () => {
             transition: 'background 0.2s',
             opacity: loading ? 0.7 : 1
           }} disabled={loading}>
-            {loading ? 'Saving...' : (editIndex !== null ? 'Update User' : 'Create User')}
+            {loading ? 'Saving...' : (editUserId !== null ? 'Update User' : 'Create User')}
           </button>
         </form>
         {/* Recent Users Table */}
@@ -401,14 +424,14 @@ const UserManagement = () => {
                 </thead>
                 <tbody>
                   {users.map((user, idx) => (
-                    <tr key={idx} style={{ background: idx % 2 === 0 ? '#f8fafc' : '#fff' }}>
-                      <td style={{ padding: '10px 8px', fontWeight: 500 }}>{user.name}</td>
-                      <td style={{ padding: '10px 8px' }}>{user.employeeNumber}</td>
-                      <td style={{ padding: '10px 8px' }}>{user.mobileNumber}</td>
-                      <td style={{ padding: '10px 8px' }}>{user.roleLabel}</td>
-                      <td style={{ padding: '10px 8px' }}>{user.siteName}</td>
+                    <tr key={user.employee_id || idx} style={{ background: idx % 2 === 0 ? '#f8fafc' : '#fff' }}>
+                      <td style={{ padding: '10px 8px', fontWeight: 500 }}>{user.employee_name}</td>
+                      <td style={{ padding: '10px 8px' }}>{user.employee_number}</td>
+                      <td style={{ padding: '10px 8px' }}>{user.mobile_number}</td>
+                      <td style={{ padding: '10px 8px' }}>{user.role_name}</td>
+                      <td style={{ padding: '10px 8px' }}>{user.site_name}</td>
                       <td style={{ padding: '10px 8px' }}>
-                        <button onClick={() => handleEdit(idx)} style={{
+                        <button onClick={() => handleEdit(user)} style={{
                           background: 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)',
                           color: '#fff',
                           border: 'none',
@@ -422,7 +445,7 @@ const UserManagement = () => {
                           alignItems: 'center',
                           gap: 4
                         }}><FaEdit style={{ fontSize: 14 }} /> Edit</button>
-                        <button onClick={() => handleDelete(idx)} style={{
+                        <button onClick={() => handleDelete(user)} style={{
                           background: '#dc2626',
                           color: '#fff',
                           border: 'none',
@@ -580,4 +603,4 @@ const UserManagement = () => {
   );
 };
 
-export default UserManagement; 
+export default UserManagement;
