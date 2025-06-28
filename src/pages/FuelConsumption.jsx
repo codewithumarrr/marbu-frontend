@@ -49,6 +49,8 @@ function FuelConsumption() {
   const [submitted, setSubmitted] = useState(false);
   const [odometerReadings, setOdometerReadings] = useState([]);
   const [isRented, setIsRented] = useState(false);
+  const [signatureCaptured, setSignatureCaptured] = useState(false);
+  const [signatureData, setSignatureData] = useState('');
 
   // Get current user role and info
   const getCurrentUser = () => {
@@ -276,8 +278,17 @@ function FuelConsumption() {
     setError('');
     setSuccessMessage('');
     try {
-      await createDieselConsumption(formValues);
+      // Prepare the payload with signature data
+      const payload = {
+        ...formValues,
+        signatureData: signatureData,
+        signatureCaptured: signatureCaptured,
+        thumbprintData: signatureData // Map signature to thumbprint for backward compatibility
+      };
+
+      await createDieselConsumption(payload);
       setSuccessMessage('Fuel consumption record created successfully!');
+      
       // Reset form on success
       setFormValues({
         vehicleEquipmentType: '',
@@ -293,6 +304,8 @@ function FuelConsumption() {
         thumbprintData: '',
         siteId: ''
       });
+      setSignatureCaptured(false);
+      setSignatureData('');
       setSubmitted(false);
       setVehicles([]);
       loadFormData();
@@ -439,41 +452,24 @@ function FuelConsumption() {
 
   const previousOdometer = odometerReadings.length > 0 ? odometerReadings[odometerReadings.length - 1] : null;
 
-  const WebAuthnButton = () => {
-    const handleWebAuthn = async () => {
-      try {
-        // In a real app, get this from your backend!
-        const optionsFromServer = {
-          challenge: Uint8Array.from('random-challenge', c => c.charCodeAt(0)),
-          allowCredentials: [],
-          timeout: 60000,
-          userVerification: 'preferred',
-          rpId: window.location.hostname,
-        };
-
-        const result = await startAuthentication(optionsFromServer);
-        alert('Authentication successful! (See console for details)');
-        console.log('WebAuthn result:', result);
-      } catch (err) {
-        alert('Authentication failed or cancelled.');
-        console.error(err);
-      }
-    };
-
+  const SignaturePad = () => {
     return (
       <div
-        className="thumbprint-pad"
-        style={{
-          border: '2px dashed #25b86f',
-          borderRadius: '8px',
-          padding: '12px',
-          textAlign: 'center',
-          cursor: 'pointer',
-          background: '#f9f9f9'
+        className={`thumbprint-pad ${signatureCaptured ? 'thumbprint-captured' : ''}`}
+        onClick={() => {
+          setSignatureCaptured(!signatureCaptured);
+          setSignatureData(signatureCaptured ? '' : `operator_signature_${Date.now()}`);
         }}
-        onClick={handleWebAuthn}
+        style={{
+          cursor: 'pointer',
+          transition: 'all 0.3s ease'
+        }}
       >
-        <span>🔒 Authenticate with Fingerprint / Face / PIN</span>
+        {signatureCaptured ? (
+          <span>✅ Operator Signature Captured - Click to remove</span>
+        ) : (
+          <span>👆 Click to capture operator signature/fingerprint</span>
+        )}
       </div>
     );
   };
@@ -747,8 +743,8 @@ function FuelConsumption() {
             </div>
           </div>
           <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label className="form-label">Operator Thumbprint Authentication</label>
-            <WebAuthnButton />
+            <label className="form-label">Operator Signature/Fingerprint</label>
+            <SignaturePad />
           </div>
           <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
             <button type="submit" className="btn btn-primary" disabled={isLoading}>

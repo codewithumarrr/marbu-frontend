@@ -50,6 +50,8 @@ function FuelReceiving() {
   });
   const [formErrors, setFormErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [signatureCaptured, setSignatureCaptured] = useState(false);
+  const [signatureData, setSignatureData] = useState('');
 
   // Load form data on component mount
   useEffect(() => {
@@ -156,9 +158,17 @@ function FuelReceiving() {
     setError('');
     setSuccessMessage('');
     try {
+      // Prepare the payload with signature data
+      const payload = {
+        ...formValues,
+        signatureData: signatureData,
+        signatureCaptured: signatureCaptured
+      };
+
       // The backend expects receivedBy as employee_number (ID), not name
-      await createDieselReceiving(formValues);
+      await createDieselReceiving(payload);
       setSuccessMessage('Fuel receiving record created successfully!');
+      
       // Reset form on success
       setFormValues({
         receiptNumber: '',
@@ -171,7 +181,10 @@ function FuelReceiving() {
         notes: '',
         siteId: ''
       });
+      setSignatureCaptured(false);
+      setSignatureData('');
       setSubmitted(false);
+      
       // Load new receipt number and dropdowns
       loadFormData();
     } catch (err) {
@@ -419,6 +432,28 @@ function FuelReceiving() {
                 placeholder="Additional notes"
                 disabled={isLoading}
               />
+            </div>
+          </div>
+
+          {/* Signature/Fingerprint Section */}
+          <div className="form-group" style={{ marginBottom: '20px' }}>
+            <label className="form-label">Receiver Signature/Fingerprint</label>
+            <div
+              className={`thumbprint-pad ${signatureCaptured ? 'thumbprint-captured' : ''}`}
+              onClick={() => {
+                setSignatureCaptured(!signatureCaptured);
+                setSignatureData(signatureCaptured ? '' : `signature_${Date.now()}`);
+              }}
+              style={{
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              {signatureCaptured ? (
+                <span>✅ Signature Captured - Click to remove</span>
+              ) : (
+                <span>👆 Click to capture signature/fingerprint</span>
+              )}
             </div>
           </div>
 

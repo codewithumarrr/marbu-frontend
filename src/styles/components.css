@@ -232,6 +232,54 @@
   background: #fef3c7;
   color: #92400e;
 }
+.status-create {
+  background: #d1fae5;
+  color: #065f46;
+}
+.status-update {
+  background: #fef3c7;
+  color: #92400e;
+}
+.status-delete {
+  background: #fecaca;
+  color: #dc2626;
+}
+.status-view {
+  background-color: #3b82f6;
+  color: white;
+}
+
+/* Thumbprint/Signature Pad Styles */
+.thumbprint-pad {
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  background-color: #f9fafb;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #6b7280;
+  transition: all 0.3s ease;
+}
+
+.thumbprint-pad:hover {
+  border-color: #9ca3af;
+  background-color: #f3f4f6;
+}
+
+.thumbprint-captured {
+  border-color: #10b981 !important;
+  background-color: #ecfdf5 !important;
+  color: #065f46 !important;
+}
+
+.thumbprint-captured:hover {
+  border-color: #059669 !important;
+  background-color: #d1fae5 !important;
+}
 .dashboard-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
