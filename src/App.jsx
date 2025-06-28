@@ -47,13 +47,12 @@ function App() {
       {!hideHeaderNav && <NavigationTabs />}
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/" element={<PrivateRoute allowedRoles={['diesel Manager', 'site incharge', 'admin']}><Dashboard /></PrivateRoute>} />
-        <Route path="/receiving" element={<PrivateRoute allowedRoles={['diesel Manager', 'admin']}><FuelReceiving /></PrivateRoute>} />
-        <Route path="/consumption" element={<PrivateRoute allowedRoles={['diesel Manager', 'site incharge', 'admin']}><FuelConsumption /></PrivateRoute>} />
-        <Route path="/reports" element={<PrivateRoute allowedRoles={['diesel Manager', 'admin']}><Reports /></PrivateRoute>} />
-        <Route path="/invoices" element={<PrivateRoute allowedRoles={['diesel Manager', 'admin']}><Invoices /></PrivateRoute>} />
-        <Route path="/audit" element={<PrivateRoute allowedRoles={['diesel Manager', 'admin']}><AuditTrail /></PrivateRoute>} />
+        <Route path="/" element={<PrivateRoute allowedRoles={['diesel manager', 'site incharge', 'admin']}><Dashboard /></PrivateRoute>} />
+        <Route path="/receiving" element={<PrivateRoute allowedRoles={['diesel manager', 'admin']}><FuelReceiving /></PrivateRoute>} />
+        <Route path="/consumption" element={<PrivateRoute allowedRoles={['diesel manager', 'site incharge', 'admin']}><FuelConsumption /></PrivateRoute>} />
+        <Route path="/reports" element={<PrivateRoute allowedRoles={['diesel manager', 'admin']}><Reports /></PrivateRoute>} />
+        <Route path="/invoices" element={<PrivateRoute allowedRoles={['diesel manager', 'admin']}><Invoices /></PrivateRoute>} />
+        <Route path="/audit" element={<PrivateRoute allowedRoles={['diesel manager', 'admin']}><AuditTrail /></PrivateRoute>} />
         <Route path="/user-management" element={<PrivateRoute allowedRoles={['admin']}><UserManagement /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
