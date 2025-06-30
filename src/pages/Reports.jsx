@@ -11,7 +11,6 @@ import {
   emailReport
 } from "../services/reportsService.js";
 import jsPDF from "jspdf";
-import WebAuthnButton from '../components/WebAuthnButton';
 
 function Reports() {
   const reportHeaders = [
@@ -271,7 +270,7 @@ function Reports() {
           }}
         >📧 Email Report</button>
       </div>
-      <WebAuthnButton />
+      {/* <WebAuthnButton /> */}
       {apiError && (
         <div style={{
           background: '#fef2f2',
@@ -324,11 +323,53 @@ function Reports() {
           </>
         )}
       />
-      {/* CSS for animations */}
+      {/* CSS for animations and responsiveness */}
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        @media (max-width: 900px) {
+          form[ref], .content-panel form {
+            flex-direction: column !important;
+            gap: 10px !important;
+          }
+          .btn {
+            width: 100%;
+            min-width: 0;
+          }
+        }
+        @media (max-width: 600px) {
+          .content-panel {
+            padding: 8px !important;
+          }
+          form[ref], .content-panel form {
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+          .btn {
+            width: 100%;
+            min-width: 0;
+            font-size: 14px;
+            padding: 10px 0;
+          }
+          .form-group {
+            width: 100%;
+            min-width: 0;
+          }
+          .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+          }
+          table {
+            font-size: 13px;
+          }
+          th, td {
+            padding: 8px 8px !important;
+          }
+          h2, .recent-title {
+            font-size: 20px !important;
+          }
         }
       `}</style>
     </div>

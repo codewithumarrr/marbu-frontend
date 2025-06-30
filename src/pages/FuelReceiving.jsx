@@ -1506,7 +1506,7 @@ function FuelReceiving() {
         </div>
       )}
 
-      {/* CSS for animations */}
+      {/* CSS for animations and responsiveness */}
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
@@ -1521,6 +1521,52 @@ function FuelReceiving() {
           display: flex;
           align-items: center;
           gap: 8px;
+        }
+        .form-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 24px;
+        }
+        .form-input, .form-select, input, select, textarea {
+          width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+        @media (max-width: 900px) {
+          .form-grid {
+            grid-template-columns: 1fr;
+            gap: 18px;
+          }
+          .table-container {
+            padding: 0 0 12px 0;
+          }
+        }
+        @media (max-width: 600px) {
+          .content-panel {
+            padding: 8px !important;
+          }
+          .form-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+          .form-input, .form-select, input, select, textarea {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+          }
+          .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+          }
+          table {
+            font-size: 13px;
+          }
+          th, td {
+            padding: 8px 8px !important;
+          }
+          h2, .recent-title {
+            font-size: 20px !important;
+          }
         }
       `}</style>
     </div>
