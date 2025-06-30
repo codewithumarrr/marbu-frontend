@@ -4,7 +4,7 @@ import { NavLink } from "react-router-dom";
 import { useUserStore } from "../store/userStore.js";
 
 const allNavItems = [
-  { id: 'dashboard', iconClass: 'fas fa-tachometer-alt', label: 'Dashboard', path: '/', roles: ['diesel-manager', 'site-incharge', 'admin'] },
+  { id: 'dashboard', iconClass: 'fas fa-tachometer-alt', label: 'Dashboard', path: '/', roles: ['diesel-manager', 'site-incharge', 'admin', 'driver'] },
   { id: 'receiving', iconClass: 'fas fa-truck-loading', label: 'Fuel Receiving', path: '/receiving', roles: ['diesel-manager', 'admin'] },
   { id: 'consumption', iconClass: 'fas fa-gas-pump', label: 'Fuel Usage', path: '/usage', roles: ['diesel-manager', 'driver', 'site-incharge', 'admin'] },
   { id: 'reports', iconClass: 'fas fa-chart-line', label: 'Reports', path: '/reports', roles: ['diesel-manager', 'admin'] },

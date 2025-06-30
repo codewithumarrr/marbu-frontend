@@ -43,6 +43,73 @@ function FuelUsageSiteInchargeForm({ onSuccess }) {
   const [signatureCaptured, setSignatureCaptured] = useState(false);
   const [signatureData, setSignatureData] = useState('');
   const [otherLocation, setOtherLocation] = useState('');
+// Camera modal state
+const [showCamera, setShowCamera] = useState(false);
+const [cameraError, setCameraError] = useState('');
+const videoRef = React.useRef(null);
+// Camera facing mode state
+const [facingMode, setFacingMode] = useState("environment");
+
+// Flip camera
+const flipCamera = async () => {
+  const newMode = facingMode === "environment" ? "user" : "environment";
+  setFacingMode(newMode);
+  if (showCamera) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: newMode } });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      setCameraError('Unable to access camera');
+    }
+  }
+};
+const canvasRef = React.useRef(null);
+
+// Open camera and stream video
+const openCamera = async () => {
+  setCameraError('');
+  setShowCamera(true);
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
+    }
+  } catch (err) {
+    setCameraError('Unable to access camera');
+  }
+};
+
+// Capture photo from video
+const capturePhoto = () => {
+  if (videoRef.current && canvasRef.current) {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(blob => {
+      if (blob) {
+        const file = new File([blob], "speedometer.jpg", { type: "image/jpeg" });
+        setFormValues(prev => ({ ...prev, speedometerImage: file }));
+      }
+    }, "image/jpeg");
+    // Stop camera stream
+    if (video.srcObject) {
+      video.srcObject.getTracks().forEach(track => track.stop());
+    }
+    setShowCamera(false);
+  }
+};
+
+// Close camera and stop stream
+const closeCamera = () => {
+  setShowCamera(false);
+  if (videoRef.current && videoRef.current.srcObject) {
+    videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+  }
+};
 
   // Load form data on mount
   useEffect(() => {
@@ -552,15 +619,43 @@ function FuelUsageSiteInchargeForm({ onSuccess }) {
           <label className="form-label">
             Speedometer Photo (Current Reading)
           </label>
-          <input
-            type="file"
-            accept="image/*"
+          <div
             className="form-input"
-            name="speedometerImage"
-            onChange={e => setFormValues(prev => ({ ...prev, speedometerImage: e.target.files[0] }))}
-            disabled={isLoading}
-            required
-          />
+            style={{ cursor: 'pointer', padding: 12, border: '1px solid #ccc', borderRadius: 4, textAlign: 'center' }}
+            onClick={openCamera}
+          >
+            {formValues.speedometerImage
+              ? <span style={{ color: '#23476a' }}>{formValues.speedometerImage.name || 'Photo captured'}</span>
+              : <span style={{ color: '#015998' }}>Tap to open camera</span>
+            }
+          </div>
+          {showCamera && (
+            <div style={{
+              position: 'fixed', top: 0, left: 0, width: window.innerWidth, height: window.innerHeight,
+              background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <div style={{
+                background: '#fff',
+                padding: 20,
+                borderRadius: 8,
+                textAlign: 'center',
+                boxShadow: '0 4px 32px rgba(0,0,0,0.25)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <video ref={videoRef} autoPlay playsInline style={{ width: 320, height: 240, borderRadius: 8, background: '#000' }} />
+                <canvas ref={canvasRef} style={{ display: 'none' }} />
+                <div style={{ marginTop: 10, display: 'flex', gap: 10, justifyContent: 'center' }}>
+                  <button type="button" className="btn btn-primary" onClick={capturePhoto}>Capture</button>
+                  <button type="button" className="btn btn-secondary" onClick={closeCamera}>Cancel</button>
+                  <button type="button" className="btn btn-secondary" onClick={flipCamera}>Flip Camera</button>
+                </div>
+                {cameraError && <div style={{ color: 'red', marginTop: 8 }}>{cameraError}</div>}
+              </div>
+            </div>
+          )}
           <div style={{ marginTop: 8, color: '#015998', fontWeight: 600 }}>
             Extracted Reading: <span style={{ color: '#23476a' }}>[To be extracted]</span>
           </div>
