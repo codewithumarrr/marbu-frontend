@@ -952,7 +952,7 @@ function FuelReceiving() {
                             {rec.tanks?.tank_name || rec.tank_id || 'N/A'}
                           </td>
                           <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
-                            {rec.suppliers?.supplier_name || rec.supplier_id || 'N/A'}
+                            {rec.suppliers?.supplier_name || rec.custom_supplier_name || rec.supplier_id || 'N/A'}
                           </td>
                           <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
                             {rec.received_by_user?.employee_name || rec.received_by_user_id || 'N/A'}
