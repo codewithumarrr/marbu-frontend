@@ -197,12 +197,12 @@ function Dashboard() {
                 data={recentActivity}
                 renderRow={(row) => (
                   <>
-                    <td>{row.date || row.consumption_datetime}</td>
-                    <td>{row.vehicle || `${row.vehicleType} ${row.vehicleId}`}</td>
-                    <td>{row.role || row.empRole || row.employeeRole || 'N/A'}</td>
-                    <td>{row.employeeName || row.name || row.operatorName || 'N/A'}</td>
-                    <td>{row.quantity || row.fuelUsed}</td>
-                    <td>{row.job || row.jobNumber}</td>
+                    <td>{row.date}</td>
+                    <td>{row.vehicle}</td>
+                    <td>{row.role}</td>
+                    <td>{row.operator}</td>
+                    <td>{row.quantity}</td>
+                    <td>{row.job}</td>
                     <td>
                       <span className={`status-badge status-${(row.status || 'active').toLowerCase()}`}>
                         {row.status || 'Active'}
