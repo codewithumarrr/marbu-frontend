@@ -14,124 +14,6 @@ import {
 } from "../services/fuelReceivingService.js";
 import { generateReceivingInvoiceExcel } from "../utils/excelExport.js";
 
-// Dummy data for demonstration
-const dummyReceivingRecords = [
-  {
-    id: 1,
-    receipt_number: 'RCP-2025-001',
-    date_time: '2025-01-15T10:30:00',
-    quantity: 5000,
-    diesel_rate: 2.15,
-    tank_id: 1,
-    supplier_id: 1,
-    received_by: 'EMP001',
-    notes: 'Regular delivery',
-    created_at: '2025-01-15T10:30:00'
-  },
-  {
-    id: 2,
-    receipt_number: 'RCP-2025-002',
-    date_time: '2025-01-14T14:20:00',
-    quantity: 3000,
-    diesel_rate: 2.10,
-    tank_id: 2,
-    supplier_id: 2,
-    received_by: 'EMP002',
-    notes: 'Emergency delivery',
-    created_at: '2025-01-14T14:20:00'
-  },
-  {
-    id: 3,
-    receipt_number: 'RCP-2025-003',
-    date_time: '2025-01-13T09:15:00',
-    quantity: 7500,
-    diesel_rate: 2.20,
-    tank_id: 1,
-    supplier_id: 3,
-    received_by: 'EMP003',
-    notes: 'Bulk delivery',
-    created_at: '2025-01-13T09:15:00'
-  },
-  {
-    id: 4,
-    receipt_number: 'RCP-2025-004',
-    date_time: '2025-01-12T16:45:00',
-    quantity: 2500,
-    diesel_rate: 2.05,
-    tank_id: 3,
-    supplier_id: 4,
-    received_by: 'EMP004',
-    notes: 'Weekly delivery',
-    created_at: '2025-01-12T16:45:00'
-  },
-  {
-    id: 5,
-    receipt_number: 'RCP-2025-005',
-    date_time: '2025-01-11T11:30:00',
-    quantity: 4000,
-    diesel_rate: 2.18,
-    tank_id: 2,
-    supplier_id: 1,
-    received_by: 'EMP001',
-    notes: 'Standard delivery',
-    created_at: '2025-01-11T11:30:00'
-  },
-  {
-    id: 6,
-    receipt_number: 'RCP-2025-006',
-    date_time: '2025-01-10T13:45:00',
-    quantity: 2000,
-    tank_id: 1,
-    supplier_id: 1,
-    received_by: 'EMP001',
-    mobile_number: '+974 5555 1234',
-    notes: 'Regular supply',
-    created_at: '2025-01-10T13:45:00'
-  },
-  {
-    id: 7,
-    receipt_number: 'RCP-2025-007',
-    date_time: '2025-01-09T08:15:00',
-    quantity: 3500,
-    tank_id: 3,
-    supplier_id: 3,
-    received_by: 'EMP003',
-    mobile_number: '+974 5555 9012',
-    notes: 'Large delivery for project',
-    created_at: '2025-01-09T08:15:00'
-  },
-  {
-    id: 8,
-    receipt_number: 'RCP-2025-008',
-    date_time: '2025-01-08T15:30:00',
-    quantity: 1200,
-    tank_id: 2,
-    supplier_id: 2,
-    received_by: 'EMP002',
-    mobile_number: '+974 5555 5678',
-    notes: 'Small top-up delivery',
-    created_at: '2025-01-08T15:30:00'
-  }
-];
-
-// Dummy form data for dropdowns
-const dummyFormData = {
-  tanks: [
-    { tank_id: 1, tank_name: 'Tank A', capacity_liters: 50000, site_name: 'Main Site' },
-    { tank_id: 2, tank_name: 'Tank B', capacity_liters: 30000, site_name: 'Secondary Site' },
-    { tank_id: 3, tank_name: 'Tank C', capacity_liters: 40000, site_name: 'Remote Site' }
-  ],
-  employees: [
-    { employee_number: 'EMP001', employee_name: 'Fareed Khan', display_name: 'Fareed Khan' },
-    { employee_number: 'EMP002', employee_name: 'Ahmed Al-Mansouri', display_name: 'Ahmed Al-Mansouri' },
-    { employee_number: 'EMP003', employee_name: 'Mohammed Hassan', display_name: 'Mohammed Hassan' }
-  ],
-  suppliers: [
-    { supplier_id: 1, supplier_name: 'ABC Fuel Company' },
-    { supplier_id: 2, supplier_name: 'Qatar Petroleum' },
-    { supplier_id: 3, supplier_name: 'Gulf Energy Solutions' }
-  ]
-};
 
 function FuelReceiving() {
   const [formData, setFormData] = useState({
@@ -145,7 +27,13 @@ function FuelReceiving() {
   const [successMessage, setSuccessMessage] = useState('');
   const [formValues, setFormValues] = useState({
     receiptNumber: '',
-    dateTime: new Date().toISOString().slice(0, 16),
+    dateTime: (() => {
+      // Use device's current date/time in local timezone, formatted for input[type="datetime-local"]
+      const now = new Date();
+      const offset = now.getTimezoneOffset();
+      const local = new Date(now.getTime() - offset * 60000);
+      return local.toISOString().slice(0, 16);
+    })(),
     quantity: '',
     tankId: '',
     receivedBy: '',
@@ -153,7 +41,7 @@ function FuelReceiving() {
     customSupplierName: '',
     dieselRate: '',
     notes: '',
-    siteId: ''
+    siteId: '',
   });
   const [formErrors, setFormErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -174,6 +62,9 @@ function FuelReceiving() {
   const [editFormValues, setEditFormValues] = useState({});
   const [editFormErrors, setEditFormErrors] = useState({});
   const [isUpdating, setIsUpdating] = useState(false);
+  // For delete confirmation
+  const [deleteId, setDeleteId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Ref for custom supplier input
   const customSupplierRef = useRef(null);
@@ -202,37 +93,31 @@ function FuelReceiving() {
     setIsLoadingRecords(true);
     setError('');
     try {
+      // Use API data only, support both paginated and non-paginated backend responses
       const response = await getAllDieselReceiving({
         page: currentPage,
         limit: recordsPerPage,
         sortBy: 'created_at',
         sortOrder: 'desc'
       });
-      
-      // Use dummy data if API doesn't return records or in development
-      if (!response?.data?.records || response.data.records.length === 0) {
-        const startIndex = (currentPage - 1) * recordsPerPage;
-        const endIndex = startIndex + recordsPerPage;
-        const paginatedDummyData = dummyReceivingRecords.slice(startIndex, endIndex);
-        
-        setReceivingRecords(paginatedDummyData);
-        setTotalRecords(dummyReceivingRecords.length);
-        setTotalPages(Math.ceil(dummyReceivingRecords.length / recordsPerPage));
+
+      // If response.data is an array, use it directly (non-paginated)
+      if (Array.isArray(response?.data)) {
+        setReceivingRecords(response.data);
+        setTotalRecords(response.data.length);
+        setTotalPages(1);
       } else {
+        // Paginated (records/total)
         setReceivingRecords(response?.data?.records || []);
         setTotalRecords(response?.data?.total || 0);
         setTotalPages(Math.ceil((response?.data?.total || 0) / recordsPerPage));
       }
     } catch (err) {
-      // Use dummy data on API error
-      const startIndex = (currentPage - 1) * recordsPerPage;
-      const endIndex = startIndex + recordsPerPage;
-      const paginatedDummyData = dummyReceivingRecords.slice(startIndex, endIndex);
-      
-      setReceivingRecords(paginatedDummyData);
-      setTotalRecords(dummyReceivingRecords.length);
-      setTotalPages(Math.ceil(dummyReceivingRecords.length / recordsPerPage));
-      console.log('Using dummy data due to API error:', err.message);
+      // On API error, show no records
+      setReceivingRecords([]);
+      setTotalRecords(0);
+      setTotalPages(1);
+      setError('Failed to load records');
     } finally {
       setIsLoadingRecords(false);
     }
@@ -250,12 +135,12 @@ function FuelReceiving() {
       const employeesRes = await getTankInchargeEmployees();
       // Get suppliers
       const suppliersRes = await getActiveSuppliers();
-      
-      // Use dummy data if API doesn't return data
-      const tanks = tanksRes?.data?.length > 0 ? tanksRes.data : dummyFormData.tanks;
-      const employees = employeesRes?.data?.length > 0 ? employeesRes.data : dummyFormData.employees;
-      const suppliers = suppliersRes?.data?.length > 0 ? suppliersRes.data : dummyFormData.suppliers;
-      
+
+      // Use API data only
+      const tanks = tanksRes?.data || [];
+      const employees = employeesRes?.data || [];
+      const suppliers = suppliersRes?.data || [];
+
       setFormData({
         tanks: tanks,
         employees: employees,
@@ -267,18 +152,18 @@ function FuelReceiving() {
         receiptNumber: receiptRes?.data?.receiptNumber || 'RCP-2025-009'
       }));
     } catch (err) {
-      // Use dummy data on API error
+      // On API error, show empty dropdowns
       setFormData({
-        tanks: dummyFormData.tanks,
-        employees: dummyFormData.employees,
-        suppliers: dummyFormData.suppliers,
-        receiptNumber: 'RCP-2025-009'
+        tanks: [],
+        employees: [],
+        suppliers: [],
+        receiptNumber: ''
       });
       setFormValues(prev => ({
         ...prev,
-        receiptNumber: 'RCP-2025-009'
+        receiptNumber: ''
       }));
-      console.log('Using dummy form data due to API error:', err.message);
+      setError('Failed to load form data');
     } finally {
       setIsLoading(false);
     }
@@ -354,7 +239,7 @@ function FuelReceiving() {
       // Prepare the payload with signature data
       const payload = {
         ...formValues,
-        supplierId: formValues.supplierId === 'other' ? formValues.customSupplierName : formValues.supplierId,
+        supplierId: formValues.supplierId === 'other' ? formValues.customSupplierName : formValues.supplierId ?? null,
         signatureData: signatureData,
         signatureCaptured: signatureCaptured
       };
@@ -383,49 +268,10 @@ function FuelReceiving() {
       // Load new receipt number and dropdowns
       loadFormData();
       // Reload records to show the new entry
+      setCurrentPage(1); // Go to first page to show the new record
       loadReceivingRecords();
     } catch (err) {
-      // Simulate successful creation with dummy data
-      const newRecord = {
-        id: Math.max(...dummyReceivingRecords.map(rec => rec.id)) + 1,
-        receipt_number: formValues.receiptNumber,
-        date_time: formValues.dateTime,
-        quantity: formValues.quantity,
-        tank_id: formValues.tankId,
-        supplier_id: formValues.supplierId,
-        received_by: formValues.receivedBy,
-        diesel_rate: formValues.dieselRate,
-        notes: formValues.notes,
-        created_at: new Date().toISOString()
-      };
-      
-      // Add to dummy data array
-      dummyReceivingRecords.unshift(newRecord);
-      
-      setSuccessMessage('Fuel receiving record created successfully! (Demo mode)');
-      
-      // Reset form on success
-      setFormValues({
-        receiptNumber: '',
-        dateTime: new Date().toISOString().slice(0, 16),
-        quantity: '',
-        tankId: '',
-        receivedBy: '',
-        supplierId: '',
-        customSupplierName: '',
-        dieselRate: '',
-        notes: '',
-        siteId: ''
-      });
-      setSignatureCaptured(false);
-      setSignatureData('');
-      setSubmitted(false);
-      
-      // Load new receipt number and dropdowns
-      loadFormData();
-      // Reload records to show the new entry
-      loadReceivingRecords();
-      console.log('Created dummy record due to API error:', err.message);
+      setError('Failed to create record');
     } finally {
       setIsLoading(false);
     }
@@ -442,39 +288,21 @@ function FuelReceiving() {
       if (record) {
         setEditingRecord(record);
         setEditFormValues({
-          receiptNumber: record.receipt_number || record.receiptNumber,
-          dateTime: record.date_time ? new Date(record.date_time).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
-          quantity: record.quantity,
-          tankId: record.tank_id || record.tankId,
-          receivedBy: record.received_by || record.receivedBy,
-          supplierId: record.supplier_id || record.supplierId,
-          dieselRate: record.diesel_rate || record.dieselRate || '',
+          receiptNumber: record.receipt_number,
+          dateTime: record.received_datetime ? new Date(record.received_datetime).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+          quantity: record.quantity_liters,
+          tankId: record.tank_id,
+          receivedBy: record.received_by_user_id,
+          supplierId: record.supplier_id,
+          customSupplierName: record.custom_supplier_name || '',
+          dieselRate: record.diesel_rate || '',
           notes: record.notes,
-          siteId: record.site_id || record.siteId
+          siteId: record.site_id,
         });
         setIsEditModalOpen(true);
       }
     } catch (err) {
-      // Use dummy data for editing when API fails
-      const dummyRecord = dummyReceivingRecords.find(rec => rec.id === recordId);
-      if (dummyRecord) {
-        setEditingRecord(dummyRecord);
-        setEditFormValues({
-          receiptNumber: dummyRecord.receipt_number,
-          dateTime: dummyRecord.date_time ? new Date(dummyRecord.date_time).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
-          quantity: dummyRecord.quantity,
-          tankId: dummyRecord.tank_id,
-          receivedBy: dummyRecord.received_by,
-          supplierId: dummyRecord.supplier_id,
-          dieselRate: dummyRecord.diesel_rate || '',
-          notes: dummyRecord.notes,
-          siteId: dummyRecord.site_id || 1
-        });
-        setIsEditModalOpen(true);
-        console.log('Using dummy record for editing due to API error:', err.message);
-      } else {
-        setError('Record not found for editing');
-      }
+      setError('Record not found for editing');
     } finally {
       setIsLoading(false);
     }
@@ -530,7 +358,18 @@ function FuelReceiving() {
     setError('');
     setSuccessMessage('');
     try {
-      await updateDieselReceiving(editingRecord.id, editFormValues);
+      await updateDieselReceiving(editingRecord.receiving_id, {
+        receiptNumber: editFormValues.receiptNumber,
+        dateTime: editFormValues.dateTime,
+        quantity: editFormValues.quantity,
+        tankId: editFormValues.tankId,
+        receivedBy: editFormValues.receivedBy,
+        supplierId: editFormValues.supplierId,
+        customSupplierName: editFormValues.customSupplierName,
+        dieselRate: editFormValues.dieselRate,
+        notes: editFormValues.notes,
+        siteId: editFormValues.siteId,
+      });
       setSuccessMessage('Fuel receiving record updated successfully!');
       setIsEditModalOpen(false);
       setEditingRecord(null);
@@ -540,35 +379,7 @@ function FuelReceiving() {
       // Reload records to show updated data
       loadReceivingRecords();
     } catch (err) {
-      // Simulate successful update with dummy data
-      const updatedDummyRecords = dummyReceivingRecords.map(rec => 
-        rec.id === editingRecord.id 
-          ? { 
-              ...rec, 
-              receipt_number: editFormValues.receiptNumber,
-              date_time: editFormValues.dateTime,
-              quantity: editFormValues.quantity,
-              tank_id: editFormValues.tankId,
-              received_by: editFormValues.receivedBy,
-              supplier_id: editFormValues.supplierId,
-              diesel_rate: editFormValues.dieselRate,
-              notes: editFormValues.notes
-            }
-          : rec
-      );
-      
-      // Update the dummy data array
-      dummyReceivingRecords.splice(0, dummyReceivingRecords.length, ...updatedDummyRecords);
-      
-      setSuccessMessage('Fuel receiving record updated successfully! (Demo mode)');
-      setIsEditModalOpen(false);
-      setEditingRecord(null);
-      setEditFormValues({});
-      setEditFormErrors({});
-      
-      // Reload records to show updated data
-      loadReceivingRecords();
-      console.log('Updated dummy record due to API error:', err.message);
+      setError('Failed to update record');
     } finally {
       setIsUpdating(false);
     }
@@ -692,8 +503,27 @@ function FuelReceiving() {
   };
 
   const handleDelete = (recordId) => {
-    // Implement the delete logic here
-    console.log(`Deleting record with id: ${recordId}`);
+    setDeleteId(recordId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    setIsLoading(true);
+    setError('');
+    try {
+      await deleteDieselReceiving(deleteId);
+      setSuccessMessage('Fuel receiving record deleted successfully!');
+      setShowDeleteModal(false);
+      setDeleteId(null);
+      loadReceivingRecords();
+    } catch (err) {
+      setError('Failed to delete record');
+      setShowDeleteModal(false);
+      setDeleteId(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -908,6 +738,48 @@ function FuelReceiving() {
           </div>
 
           {/* Signature/Fingerprint Section */}
+
+          {/* Delete Confirmation Modal */}
+          {showDeleteModal && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 2000
+            }}>
+              <div style={{
+                background: '#fff',
+                padding: 32,
+                borderRadius: 12,
+                boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
+                textAlign: 'center'
+              }}>
+                <h3 style={{ marginBottom: 16 }}>Delete Record?</h3>
+                <p>Are you sure you want to delete this fuel receiving record?</p>
+                <div style={{ marginTop: 24, display: 'flex', gap: 16, justifyContent: 'center' }}>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setShowDeleteModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    style={{ background: '#dc2626', borderColor: '#dc2626' }}
+                    onClick={confirmDelete}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           {/* <div className="form-group" style={{ marginBottom: '20px' }}>
             <label className="form-label">Receiver Signature/Fingerprint</label>
             <div
@@ -1050,7 +922,7 @@ function FuelReceiving() {
                         </td>
                       </tr>
                     ) : (
-                      receivingRecords.map((rec, idx) => (
+                      [...receivingRecords]?.reverse()?.map((rec, idx) => (
                         <tr key={rec.id || idx} style={{
                           background: '#fff',
                           boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
@@ -1060,31 +932,31 @@ function FuelReceiving() {
                           height: 60,
                         }}>
                           <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', fontWeight: 500, textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
-                            {rec.receipt_number || rec.receiptNumber}
+                            {rec.receipt_number}
                           </td>
                           <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
-                            {rec.date_time ? new Date(rec.date_time).toLocaleString() : 
+                            {rec.received_datetime ? new Date(rec.received_datetime).toLocaleString() :
                              rec.created_at ? new Date(rec.created_at).toLocaleString() : 'N/A'}
                           </td>
                           <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
-                            {rec.quantity} L
+                            {rec.quantity_liters} L
                           </td>
                           <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
-                            {rec.diesel_rate || rec.dieselRate ? `QAR ${rec.diesel_rate || rec.dieselRate}` : 'N/A'}
+                            {typeof rec.diesel_rate === 'number' ? `QAR ${rec.diesel_rate}` : 'N/A'}
                           </td>
                           <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
-                            {getTankName(rec.tank_id || rec.tankId)}
+                            {rec.tanks?.tank_name || rec.tank_id || 'N/A'}
                           </td>
                           <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
-                            {getSupplierName(rec.supplier_id || rec.supplierId)}
+                            {rec.suppliers?.supplier_name || rec.supplier_id || 'N/A'}
                           </td>
                           <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
-                            {getEmployeeDisplayName(rec.received_by || rec.receivedBy)}
+                            {rec.received_by_user?.employee_name || rec.received_by_user_id || 'N/A'}
                           </td>
                           <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)' }}>
                             <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                               <button 
-                                onClick={() => handleEdit(rec.id)}
+                                onClick={() => handleEdit(rec.receiving_id)}
                                 style={{
                                   background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
                                   color: '#fff',
@@ -1104,7 +976,7 @@ function FuelReceiving() {
                                 <span style={{ fontSize: 18, marginRight: 4 }}><i class="fa fa-pencil" aria-hidden="true"></i></span> 
                               </button>
                               <button
-                                onClick={() => handleDelete(rec.id)}
+                                onClick={() => handleDelete(rec.receiving_id)}
                                 style={{
                                   background: '#dc2626',
                                   color: '#fff',
@@ -1276,7 +1148,7 @@ function FuelReceiving() {
                   <input
                     type="text"
                     value={editFormValues.receiptNumber || ''}
-                    
+                    readOnly
                     style={{
                       width: '100%',
                       padding: '12px',
@@ -1415,6 +1287,7 @@ function FuelReceiving() {
                         {supplier.supplier_name}
                       </option>
                     ))}
+                    <option value="other">Other (Enter manually)</option>
                   </select>
                   {editFormErrors.supplierId && (
                     <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
@@ -1422,6 +1295,27 @@ function FuelReceiving() {
                     </div>
                   )}
                 </div>
+                {editFormValues.supplierId === "other" && (
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
+                      Custom Supplier Name
+                    </label>
+                    <input
+                      type="text"
+                      name="customSupplierName"
+                      value={editFormValues.customSupplierName || ""}
+                      onChange={handleEditInputChange}
+                      placeholder="Enter supplier name"
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '8px'
+                      }}
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
