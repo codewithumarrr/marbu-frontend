@@ -22,18 +22,20 @@ function FuelReceiving() {
     suppliers: [],
     receiptNumber: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [formValues, setFormValues] = useState({
-    receiptNumber: '',
-    dateTime: (() => {
+
+  const getCurrentDateTime = () => {
       // Use device's current date/time in local timezone, formatted for input[type="datetime-local"]
       const now = new Date();
       const offset = now.getTimezoneOffset();
       const local = new Date(now.getTime() - offset * 60000);
       return local.toISOString().slice(0, 16);
-    })(),
+  };
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [formValues, setFormValues] = useState({
+    receiptNumber: '',
+    dateTime: getCurrentDateTime(),
     quantity: '',
     tankId: '',
     receivedBy: '',
@@ -250,8 +252,8 @@ function FuelReceiving() {
       
       // Reset form on success
       setFormValues({
-        receiptNumber: '',
-        dateTime: new Date().toISOString().slice(0, 16),
+        receiptNumber: formData?.receiptNumber || '',
+        dateTime: getCurrentDateTime(),
         quantity: '',
         tankId: '',
         receivedBy: '',
@@ -576,7 +578,9 @@ function FuelReceiving() {
                 className="form-input"
                 name="receiptNumber"
                 value={formValues.receiptNumber}
-                
+                onChange={handleInputChange}
+                disabled={isLoading}
+                required
               />
             </div>
 
@@ -1148,7 +1152,6 @@ function FuelReceiving() {
                   <input
                     type="text"
                     value={editFormValues.receiptNumber || ''}
-                    readOnly
                     style={{
                       width: '100%',
                       padding: '12px',
