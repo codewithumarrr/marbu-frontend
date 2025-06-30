@@ -192,7 +192,7 @@ const Login = () => {
               </>
             ) : (
               <>
-                <span role="img" aria-label="rocket">🚀</span> LOGIN
+                LOGIN
               </>
             )}
           </button>
