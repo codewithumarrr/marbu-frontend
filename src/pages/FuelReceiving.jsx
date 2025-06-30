@@ -746,7 +746,7 @@ function FuelReceiving() {
                 className="form-input"
                 name="receiptNumber"
                 value={formValues.receiptNumber}
-                readOnly
+                
               />
             </div>
 
@@ -1276,7 +1276,7 @@ function FuelReceiving() {
                   <input
                     type="text"
                     value={editFormValues.receiptNumber || ''}
-                    readOnly
+                    
                     style={{
                       width: '100%',
                       padding: '12px',

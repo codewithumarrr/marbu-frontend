@@ -10,7 +10,7 @@ const allNavItems = [
   { id: 'reports', iconClass: 'fas fa-chart-line', label: 'Reports', path: '/reports', roles: ['diesel-manager', 'admin'] },
   { id: 'invoices', iconClass: 'fas fa-file-invoice-dollar', label: 'Invoices', path: '/invoices', roles: ['diesel-manager', 'admin'] },
   { id: 'audit', iconClass: 'fas fa-clipboard-list', label: 'Audit Trail', path: '/audit', roles: ['diesel-manager', 'admin'] },
-  { id: 'user-management', iconClass: 'fas fa-users-cog', label: 'UserManagement', path: '/user-management', roles: ['admin'] },
+  { id: 'user-management', iconClass: 'fas fa-users-cog', label: 'User Management', path: '/user-management', roles: ['admin'] },
 ];
 
 const NavigationTabs = () => {
