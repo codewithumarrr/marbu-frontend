@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { getAllRoles, register, getAllUsers, updateUser, deleteUser, getUserByEmployeeNumber } from '../services/authService.js';
 import { getReportSites } from '../services/reportsService.js';
-import { FaEdit, FaTrash } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaIdBadge } from 'react-icons/fa';
+
+const USERS_PER_PAGE = 4;
 
 const UserManagement = () => {
   const [name, setName] = useState('');
@@ -26,6 +28,9 @@ const UserManagement = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(users.length / USERS_PER_PAGE);
+  const paginatedUsers = users.slice((currentPage - 1) * USERS_PER_PAGE, currentPage * USERS_PER_PAGE);
 
   useEffect(() => {
     // Load initial data
@@ -185,28 +190,19 @@ const UserManagement = () => {
 
   return (
     <div style={{
-      minHeight: 'calc(100vh - 60px)',
-      background: '#f4fafd',
-      display: 'flex',
-      alignItems: 'flex-start',
-      justifyContent: 'center',
-      padding: '40px 0',
+        background: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '15px',
+        padding: '30px',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+      width: "100%"
     }}>
       <div style={{
-        background: '#fff',
-        borderRadius: 16,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
-        padding: '32px 40px',
-        width: '100%',
-        maxWidth: 1100,
-        margin: '0 auto',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
+       width: "100%"
       }}>
-        <div style={{ fontSize: 36, marginBottom: 6 }}><i className="fas fa-users-cog"></i></div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: 'rgb(1,89,152)', marginBottom: 2 }}>User Management</div>
-        <div style={{ color: '#666', marginBottom: 18, fontSize: 14 }}>Add or manage users</div>
+
+        <div style={{ color: '#015998', marginBottom: 20, fontWeight: 700, fontSize: 27 }}>User Management</div>
+
         <form style={{ width: '100%' }} onSubmit={handleSubmit} noValidate>
           {apiError && (
             <div style={{
@@ -228,110 +224,96 @@ const UserManagement = () => {
             gap: 20,
             marginBottom: 18,
           }}>
-            <div className="form-group">
-              <label className="form-label" style={{ fontSize: 16, fontWeight: 600 }}>NAME</label>
-              <div style={{ position: 'relative' }}>
+             <div className="form-group">
+              <label className="form-label" >Employee Number</label>
+              
                 <input
                   type="text"
-                  placeholder="Enter name"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 36px 10px 12px',
-                    borderRadius: 8,
-                    border: '1.5px solid #e0e0e0',
-                    fontSize: 15,
-                    outline: 'none',
-                  }}
-                />
-                <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: '#aaa' }}>👤</span>
-              </div>
-              {submitted && nameError && (
-                <div style={{ color: '#dc2626', fontSize: 12, marginTop: 3 }}>{nameError}</div>
-              )}
-            </div>
-            <div className="form-group">
-              <label className="form-label" style={{ fontSize: 16, fontWeight: 600 }}>Employee Number</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
+                  className='form-input'
                   placeholder="Enter Employee Number"
                   value={employeeNumber}
                   onChange={e => setEmployeeNumber(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '10px 36px 10px 12px',
-                    borderRadius: 8,
-                    border: '1.5px solid #e0e0e0',
-                    fontSize: 15,
-                    outline: 'none',
+                 
                   }}
                 />
-                <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: '#aaa' }}>✉️</span>
-              </div>
+              
+              
               {submitted && userError && (
                 <div style={{ color: '#dc2626', fontSize: 12, marginTop: 3 }}>{userError}</div>
               )}
             </div>
             <div className="form-group">
-              <label className="form-label" style={{ fontSize: 16, fontWeight: 600 }}>Mobile Number</label>
-              <div style={{ position: 'relative' }}>
+              <label className="form-label">NAME</label>
+              
+                <input
+                  type="text"
+                  className='form-input'
+                  placeholder="Enter name"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  style={{
+                    width: '100%',
+                   
+                  }}
+                />
+              
+              
+              {submitted && nameError && (
+                <div style={{ color: '#dc2626', fontSize: 12, marginTop: 3 }}>{nameError}</div>
+              )}
+            </div>
+           
+            <div className="form-group">
+              <label className="form-label" >Mobile Number</label>
+              
                 <input
                   type="tel"
+                  className='form-input'
                   placeholder="Enter mobile number"
                   value={mobileNumber}
                   onChange={e => setMobileNumber(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '10px 36px 10px 12px',
-                    borderRadius: 8,
-                    border: '1.5px solid #e0e0e0',
-                    fontSize: 15,
-                    outline: 'none',
+                   
                   }}
                 />
-                <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: '#aaa' }}>📱</span>
-              </div>
+                
+              
               {submitted && mobileError && (
                 <div style={{ color: '#dc2626', fontSize: 12, marginTop: 3 }}>{mobileError}</div>
               )}
             </div>
             <div className="form-group">
-              <label className="form-label" style={{ fontSize: 16, fontWeight: 600 }}>Password</label>
-              <div style={{ position: 'relative' }}>
+              <label className="form-label" >Password</label>
+              
                 <input
                   type="password"
+                  className='form-input'
                   placeholder="Enter password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '10px 36px 10px 12px',
-                    borderRadius: 8,
-                    border: '1.5px solid #e0e0e0',
-                    fontSize: 15,
-                    outline: 'none',
+                   
                   }}
                 />
-                <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: '#aaa' }}>🔒</span>
-              </div>
+                
+              
               {submitted && passwordError && (
                 <div style={{ color: '#dc2626', fontSize: 12, marginTop: 3 }}>{passwordError}</div>
               )}
             </div>
             <div className="form-group">
-              <label className="form-label" style={{ fontSize: 16, fontWeight: 600 }}>Role</label>
+              <label className="form-label" >Role</label>
               <select
                 value={roleName}
+                className='form-select'
                 onChange={e => setRoleName(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: 8,
-                  border: '1.5px solid #e0e0e0',
-                  fontSize: 15,
-                  outline: 'none',
+                 
                 }}
               >
                 <option value="">Select Role</option>
@@ -344,17 +326,14 @@ const UserManagement = () => {
               )}
             </div>
             <div className="form-group">
-              <label className="form-label" style={{ fontSize: 16, fontWeight: 600 }}>Site</label>
+            <label className="form-label">Site</label>
               <select
                 value={siteId}
+                className='form-select'
                 onChange={e => setSiteId(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: 8,
-                  border: '1.5px solid #e0e0e0',
-                  fontSize: 15,
-                  outline: 'none',
+                 
                 }}
               >
                 <option value="">Select Site</option>
@@ -368,14 +347,14 @@ const UserManagement = () => {
             </div>
           </div>
           <button type="submit" style={{
-            width: '100%',
-            background: 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)',
+            width: 'auto',
+            background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
             color: '#fff',
             fontWeight: 700,
             fontSize: 16,
             border: 'none',
             borderRadius: 8,
-            padding: '14px 0',
+            padding: '10px 20px',
             marginTop: 8,
             boxShadow: '0 2px 8px rgba(37,99,235,0.10)',
             letterSpacing: 1,
@@ -389,80 +368,173 @@ const UserManagement = () => {
         {/* Recent Users Table */}
         {users.length > 0 && (
           <div style={{
-            background: '#fff',
-            borderRadius: 12,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-            marginTop: 48,
-            padding: 0,
-            overflow: 'hidden',
-            width: '100%',
-            maxWidth: 1100,
-            alignSelf: 'center',
+          marginTop: 40,
+          width: "100%"
           }}>
-            <div style={{
-              background: 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: 20,
-              padding: '12px 24px',
-              borderTopLeftRadius: 12,
-              borderTopRightRadius: 12,
-            }}>
-              Recent Users
+            <div>
+              <div style={{
+                fontWeight: 600,
+                fontSize: 24,
+                color: '#015998',
+              }}>
+                Recent Users
+              </div>
             </div>
-            <div style={{ padding: 20 }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', borderRadius: 8, overflow: 'hidden' }}>
-                <thead>
-                  <tr style={{ background: 'linear-gradient(90deg, #25b86f 0%, #2563eb 100%)' }}>
-                    <th style={{ color: '#fff', fontWeight: 700, padding: '12px 8px', border: 'none' }}>Name</th>
-                    <th style={{ color: '#fff', fontWeight: 700, padding: '12px 8px', border: 'none' }}>Employee Number</th>
-                    <th style={{ color: '#fff', fontWeight: 700, padding: '12px 8px', border: 'none' }}>Mobile</th>
-                    <th style={{ color: '#fff', fontWeight: 700, padding: '12px 8px', border: 'none' }}>Role</th>
-                    <th style={{ color: '#fff', fontWeight: 700, padding: '12px 8px', border: 'none' }}>Site</th>
-                    <th style={{ color: '#fff', fontWeight: 700, padding: '12px 8px', border: 'none' }}>Actions</th>
+            <div style={{
+              width: '100%',
+              height: 5,
+              background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
+              borderRadius: 8,
+              margin: '10px 0 18px 0',
+            }} />
+            <div className="table-container" style={{ overflowX: 'auto', borderRadius: '12px' }}>
+              <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: 'transparent' }}>
+                <thead style={{ background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)' }}>
+                  <tr>
+                    <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15, whiteSpace: 'nowrap' }}>Name</th>
+                    <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15, whiteSpace: 'nowrap' }}>Employee Number</th>
+                    <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15, whiteSpace: 'nowrap' }}>Mobile</th>
+                    <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15, whiteSpace: 'nowrap' }}>Role</th>
+                    <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15, whiteSpace: 'nowrap' }}>Site</th>
+                    <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15, whiteSpace: 'nowrap' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user, idx) => (
-                    <tr key={user.employee_id || idx} style={{ background: idx % 2 === 0 ? '#f8fafc' : '#fff' }}>
-                      <td style={{ padding: '10px 8px', fontWeight: 500 }}>{user.employee_name}</td>
-                      <td style={{ padding: '10px 8px' }}>{user.employee_number}</td>
-                      <td style={{ padding: '10px 8px' }}>{user.mobile_number}</td>
-                      <td style={{ padding: '10px 8px' }}>{user.role_name}</td>
-                      <td style={{ padding: '10px 8px' }}>{user.site_name}</td>
-                      <td style={{ padding: '10px 8px' }}>
-                        <button onClick={() => handleEdit(user)} style={{
-                          background: 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: 6,
-                          padding: '4px 10px',
-                          fontWeight: 600,
-                          fontSize: 14,
-                          cursor: 'pointer',
-                          marginRight: 8,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4
-                        }}><FaEdit style={{ fontSize: 14 }} /> Edit</button>
-                        <button onClick={() => handleDelete(user)} style={{
-                          background: '#dc2626',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: 6,
-                          padding: '4px 10px',
-                          fontWeight: 600,
-                          fontSize: 14,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4
-                        }}><FaTrash style={{ fontSize: 14 }} /> Delete</button>
+                  {paginatedUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" style={{
+                        padding: '40px 24px',
+                        textAlign: 'center',
+                        color: '#666',
+                        fontSize: '16px',
+                        fontWeight: '500'
+                      }}>
+                        No users found
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    paginatedUsers.map((user, idx) => (
+                      <tr key={user.employee_id || idx} style={{
+                        background: '#fff',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                        borderRadius: 10,
+                        marginTop: 8,
+                        marginBottom: 8,
+                        height: 60,
+                      }}>
+                        <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', fontWeight: 500, textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>{user.employee_name}</td>
+                        <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>{user.employee_number}</td>
+                        <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>{user.mobile_number}</td>
+                        <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>{user.role_name}</td>
+                        <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>{user.site_name}</td>
+                        <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)' }}>
+                          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <button
+                              onClick={() => handleEdit(user)}
+                              style={{
+                                background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: 8,
+                                padding: '6px 16px',
+                                fontWeight: 700,
+                                fontSize: 15,
+                                cursor: 'pointer',
+                                letterSpacing: 1,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
+                              }}
+                            >
+                              <span style={{ fontSize: 18, marginRight: 4 }}><i className="fa fa-pencil" aria-hidden="true"></i></span>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(user)}
+                              style={{
+                                background: '#dc2626',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: 8,
+                                padding: '6px 16px',
+                                fontWeight: 700,
+                                fontSize: 15,
+                                cursor: 'pointer',
+                                letterSpacing: 1,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                                transition: 'background 0.2s',
+                              }}
+                            >
+                              <span style={{ fontSize: 18, marginRight: 4 }}><i className="fa fa-trash" aria-hidden="true"></i></span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div style={{ paddingBottom: 20,  display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 24 }}>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    style={{
+                      background: currentPage === 1 ? '#e5e7eb' : 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
+                      color: currentPage === 1 ? '#9ca3af' : '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '8px 16px',
+                      fontWeight: 600,
+                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                      fontSize: 14
+                    }}
+                  >
+                    ← Previous
+                  </button>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        style={{
+                          background: currentPage === page ? 'linear-gradient(135deg, #25b86f 0%, #015998 100%)' : '#fff',
+                          color: currentPage === page ? '#fff' : '#374151',
+                          border: currentPage === page ? 'none' : '1px solid #d1d5db',
+                          borderRadius: 8,
+                          padding: '8px 12px',
+                          fontWeight: currentPage === page ? 700 : 500,
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          minWidth: 40
+                        }}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    style={{
+                      background: currentPage === totalPages ? '#e5e7eb' : 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
+                      color: currentPage === totalPages ? '#9ca3af' : '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '8px 16px',
+                      fontWeight: 600,
+                      cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                      fontSize: 14
+                    }}
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -496,7 +568,7 @@ const UserManagement = () => {
               <div style={{ fontWeight: 600, fontSize: 20, color: '#23476a' }}>User deleted successfully</div>
               <button onClick={() => setShowDeleteModal(false)} style={{
                 marginTop: 10,
-                background: 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)',
+                background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 8,
@@ -540,7 +612,7 @@ const UserManagement = () => {
               <div style={{ fontWeight: 600, fontSize: 20, color: '#23476a' }}>User updated successfully</div>
               <button onClick={() => setShowUpdateModal(false)} style={{
                 marginTop: 10,
-                background: 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)',
+                background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 8,
@@ -584,7 +656,7 @@ const UserManagement = () => {
               <div style={{ fontWeight: 600, fontSize: 20, color: '#23476a' }}>User created successfully</div>
               <button onClick={() => setShowCreateModal(false)} style={{
                 marginTop: 10,
-                background: 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)',
+                background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 8,

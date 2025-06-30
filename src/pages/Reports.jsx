@@ -114,7 +114,7 @@ function Reports() {
 
   return (
     <div id="reports" className="content-panel">
-      <h2 style={{ marginBottom: '20px', color: '#015998' }}>Fuel Usage Reports</h2>
+      <h2 style={{ marginBottom: '20px', color: '#015998',fontSize:27,fontWeight:700 }}>Fuel Usage Reports</h2>
       {/* Remove nested form: just use a single form here */}
       <form ref={filterFormRef} onSubmit={handleGenerateReport} autoComplete="off" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'end', marginBottom: '20px' }}>
         <div className="form-group">

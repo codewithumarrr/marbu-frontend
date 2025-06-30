@@ -81,7 +81,7 @@ function AuditTrail() {
 
   return (
     <div id="audit" className="content-panel">
-      <h2 style={{ marginBottom: '20px', color: '#015998' }}>Audit Trail</h2>
+      <h2 style={{ marginBottom: '20px', color: '#015998',fontSize:27,fontWeight:700 }}>Audit Trail</h2>
       <FilterGroup onSubmit={handleFilterAudit}>
         <div className="form-group">
           <label className="form-label">Action Type</label>

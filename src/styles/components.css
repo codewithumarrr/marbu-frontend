@@ -33,7 +33,7 @@
   border-top: 1px solid #eee;
 }
 .user-badge {
-  background: linear-gradient(45deg, #25b86f, #015998);
+  background: linear-gradient(135deg, #25b86f 0%, #015998 100%);
   color: white;
   padding: 7px 14px;
   border-radius: 50px;
@@ -70,7 +70,7 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 .nav-tab {
-  flex: 1;
+  flex-grow: 1;
   padding: 15px 20px;
   text-align: center;
   cursor: pointer;
@@ -79,6 +79,7 @@
   font-weight: 500;
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
 }
 .nav-tab::before {
   content: "";
@@ -87,7 +88,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(45deg, #25b86f, #015998);
+  background: linear-gradient(135deg, #25b86f 0%, #015998 100%);
   transition: left 0.3s ease;
   z-index: -1;
 }
@@ -130,6 +131,7 @@
 .form-group {
   display: flex;
   flex-direction: column;
+  flex-grow: 1;
 }
 .form-label {
   font-weight: 600;
@@ -165,7 +167,7 @@
   gap: 8px;
 }
 .btn-primary {
-  background: linear-gradient(45deg, #25b86f, #015998);
+  background: linear-gradient(135deg, #25b86f, #015998);
   color: white;
 }
 .btn-primary:hover {
@@ -185,11 +187,11 @@
   color: white;
 }
 .btn-success {
-  background: linear-gradient(45deg, #25b86f, #015998);
+  background: linear-gradient(135deg, #25b86f 0%, #015998 100%);
   color: white;
 }
 .btn-invoice {
-  background: linear-gradient(45deg, #25b86f, #015998);
+  background: linear-gradient(135deg, #25b86f 0%, #015998 100%);
   color: white;
 }
 .table-container {
@@ -210,12 +212,11 @@
   border-bottom: 1px solid #e2e8f0;
 }
 .table th {
-  background: linear-gradient(45deg, #25b86f, #015998);
   color: white;
   font-weight: 600;
 }
-.table tr:hover {
-  background: #f0f9ff;
+.table thead {
+  background: linear-gradient(135deg, #25b86f 0%, #015998 100%);
 }
 .status-badge {
   padding: 4px 12px;
@@ -318,7 +319,7 @@
 .card-value {
   font-size: 32px;
   font-weight: bold;
-  background: linear-gradient(45deg, #25b86f, #015998);
+  background: linear-gradient(135deg, #25b86f 0%, #015998 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -428,7 +429,7 @@
 .modal-title {
   font-size: 24px;
   font-weight: bold;
-  background: linear-gradient(45deg, #25b86f, #015998);
+  background: linear-gradient(135deg, #25b86f 0%, #015998 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

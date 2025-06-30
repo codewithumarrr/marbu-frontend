@@ -80,9 +80,9 @@ const Login = () => {
         flexDirection: 'column',
         alignItems: 'center',
       }}>
-        <div style={{ fontSize: 36, marginBottom: 6 }}>🛢️</div>
-        <div style={{ fontSize: 24, fontWeight: 700, color: 'rgb(1,89,152)', marginBottom: 2 }}>Welcome</div>
-        <div style={{ color: '#666', marginBottom: 20, fontSize: 15 }}>Welcome to MARBU</div>
+        <div style={{ fontSize: 36, marginBottom: 6 }}><img src="https://i.ibb.co/YFHXfVz4/logo.png" alt="MARBU Logo" style={{ width: 130, objectFit: 'contain' }} /></div>
+        
+        <div style={{ color: '#666', marginBottom: 20, fontSize: 15 }}>Welcome to MARBU PMV</div>
         <form style={{ width: '100%' }} onSubmit={handleSubmit} noValidate>
           {/* API Error Display */}
           {apiError && (

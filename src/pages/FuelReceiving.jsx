@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../styles/pages.css";
 import {
   getAllDieselReceiving,
@@ -20,59 +20,59 @@ const dummyReceivingRecords = [
     id: 1,
     receipt_number: 'RCP-2025-001',
     date_time: '2025-01-15T10:30:00',
-    quantity: 2500,
+    quantity: 5000,
+    diesel_rate: 2.15,
     tank_id: 1,
     supplier_id: 1,
     received_by: 'EMP001',
-    mobile_number: '+974 5555 1234',
-    notes: 'Regular diesel delivery',
+    notes: 'Regular delivery',
     created_at: '2025-01-15T10:30:00'
   },
   {
     id: 2,
     receipt_number: 'RCP-2025-002',
-    date_time: '2025-01-14T14:15:00',
-    quantity: 1800,
+    date_time: '2025-01-14T14:20:00',
+    quantity: 3000,
+    diesel_rate: 2.10,
     tank_id: 2,
     supplier_id: 2,
     received_by: 'EMP002',
-    mobile_number: '+974 5555 5678',
-    notes: 'Emergency fuel supply',
-    created_at: '2025-01-14T14:15:00'
+    notes: 'Emergency delivery',
+    created_at: '2025-01-14T14:20:00'
   },
   {
     id: 3,
     receipt_number: 'RCP-2025-003',
-    date_time: '2025-01-13T09:45:00',
-    quantity: 3200,
+    date_time: '2025-01-13T09:15:00',
+    quantity: 7500,
+    diesel_rate: 2.20,
     tank_id: 1,
-    supplier_id: 1,
-    received_by: 'EMP001',
-    mobile_number: '+974 5555 1234',
-    notes: 'Monthly bulk delivery',
-    created_at: '2025-01-13T09:45:00'
+    supplier_id: 3,
+    received_by: 'EMP003',
+    notes: 'Bulk delivery',
+    created_at: '2025-01-13T09:15:00'
   },
   {
     id: 4,
     receipt_number: 'RCP-2025-004',
-    date_time: '2025-01-12T16:20:00',
-    quantity: 1500,
+    date_time: '2025-01-12T16:45:00',
+    quantity: 2500,
+    diesel_rate: 2.05,
     tank_id: 3,
-    supplier_id: 3,
-    received_by: 'EMP003',
-    mobile_number: '+974 5555 9012',
-    notes: 'Weekend delivery',
-    created_at: '2025-01-12T16:20:00'
+    supplier_id: 4,
+    received_by: 'EMP004',
+    notes: 'Weekly delivery',
+    created_at: '2025-01-12T16:45:00'
   },
   {
     id: 5,
     receipt_number: 'RCP-2025-005',
     date_time: '2025-01-11T11:30:00',
-    quantity: 2800,
+    quantity: 4000,
+    diesel_rate: 2.18,
     tank_id: 2,
-    supplier_id: 2,
-    received_by: 'EMP002',
-    mobile_number: '+974 5555 5678',
+    supplier_id: 1,
+    received_by: 'EMP001',
     notes: 'Standard delivery',
     created_at: '2025-01-11T11:30:00'
   },
@@ -150,7 +150,8 @@ function FuelReceiving() {
     tankId: '',
     receivedBy: '',
     supplierId: '',
-    mobileNumber: '',
+    customSupplierName: '',
+    dieselRate: '',
     notes: '',
     siteId: ''
   });
@@ -174,6 +175,9 @@ function FuelReceiving() {
   const [editFormErrors, setEditFormErrors] = useState({});
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // Ref for custom supplier input
+  const customSupplierRef = useRef(null);
+
   // Load form data on component mount
   useEffect(() => {
     loadFormData();
@@ -186,6 +190,13 @@ function FuelReceiving() {
     loadReceivingRecords();
     // eslint-disable-next-line
   }, [currentPage]);
+
+  // Auto-focus custom supplier field when "Other" is selected
+  useEffect(() => {
+    if (formValues.supplierId === "other" && customSupplierRef.current) {
+      customSupplierRef.current.focus();
+    }
+  }, [formValues.supplierId]);
 
   const loadReceivingRecords = async () => {
     setIsLoadingRecords(true);
@@ -343,6 +354,7 @@ function FuelReceiving() {
       // Prepare the payload with signature data
       const payload = {
         ...formValues,
+        supplierId: formValues.supplierId === 'other' ? formValues.customSupplierName : formValues.supplierId,
         signatureData: signatureData,
         signatureCaptured: signatureCaptured
       };
@@ -359,7 +371,8 @@ function FuelReceiving() {
         tankId: '',
         receivedBy: '',
         supplierId: '',
-        mobileNumber: '',
+        customSupplierName: '',
+        dieselRate: '',
         notes: '',
         siteId: ''
       });
@@ -381,7 +394,7 @@ function FuelReceiving() {
         tank_id: formValues.tankId,
         supplier_id: formValues.supplierId,
         received_by: formValues.receivedBy,
-        mobile_number: formValues.mobileNumber,
+        diesel_rate: formValues.dieselRate,
         notes: formValues.notes,
         created_at: new Date().toISOString()
       };
@@ -399,7 +412,8 @@ function FuelReceiving() {
         tankId: '',
         receivedBy: '',
         supplierId: '',
-        mobileNumber: '',
+        customSupplierName: '',
+        dieselRate: '',
         notes: '',
         siteId: ''
       });
@@ -434,7 +448,7 @@ function FuelReceiving() {
           tankId: record.tank_id || record.tankId,
           receivedBy: record.received_by || record.receivedBy,
           supplierId: record.supplier_id || record.supplierId,
-          mobileNumber: record.mobile_number || record.mobileNumber,
+          dieselRate: record.diesel_rate || record.dieselRate || '',
           notes: record.notes,
           siteId: record.site_id || record.siteId
         });
@@ -452,7 +466,7 @@ function FuelReceiving() {
           tankId: dummyRecord.tank_id,
           receivedBy: dummyRecord.received_by,
           supplierId: dummyRecord.supplier_id,
-          mobileNumber: dummyRecord.mobile_number,
+          dieselRate: dummyRecord.diesel_rate || '',
           notes: dummyRecord.notes,
           siteId: dummyRecord.site_id || 1
         });
@@ -537,7 +551,7 @@ function FuelReceiving() {
               tank_id: editFormValues.tankId,
               received_by: editFormValues.receivedBy,
               supplier_id: editFormValues.supplierId,
-              mobile_number: editFormValues.mobileNumber,
+              diesel_rate: editFormValues.dieselRate,
               notes: editFormValues.notes
             }
           : rec
@@ -625,7 +639,8 @@ function FuelReceiving() {
       tankId: '',
       receivedBy: '',
       supplierId: '',
-      mobileNumber: '',
+      customSupplierName: '',
+      dieselRate: '',
       notes: '',
       siteId: ''
     });
@@ -651,9 +666,39 @@ function FuelReceiving() {
     return supplier ? supplier.supplier_name : supplierId;
   };
 
+  // Helper function to get selected tank location
+  const getSelectedTankLocation = () => {
+    const tank = formData.tanks.find(t => t.tank_id === formValues.tankId);
+    return tank ? tank.site_name || tank.location : '';
+  };
+
+  // Helper function to get supplier rate
+  const getSupplierRate = () => {
+    const supplier = formData.suppliers.find(s => s.supplier_id === formValues.supplierId);
+    return supplier ? supplier.dieselRate : '';
+  };
+
+  // Helper function to get employee role
+  const getEmployeeRole = () => {
+    const employee = formData.employees.find(e => e.employee_number === formValues.receivedBy);
+    return employee ? employee.display_name || employee.employee_name : '';
+  };
+
+  // Helper function to calculate total cost
+  const calculateTotalCost = () => {
+    const quantity = parseFloat(formValues.quantity);
+    const rate = parseFloat(formValues.dieselRate);
+    return (quantity * rate).toFixed(2);
+  };
+
+  const handleDelete = (recordId) => {
+    // Implement the delete logic here
+    console.log(`Deleting record with id: ${recordId}`);
+  };
+
   return (
     <div id="receiving" className="content-panel">
-      <h2 style={{ marginBottom: '20px', color: '#015998' }}>Fuel Receiving Entry</h2>
+      <h2 style={{ marginBottom: '20px', color: '#015998', fontWeight: 700, fontSize: 27 }}>Fuel Receiving Entry</h2>
 
       {/* Success Message */}
       {successMessage && (
@@ -745,7 +790,7 @@ function FuelReceiving() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Tank</label>
+              <label className="form-label">Tank Location</label>
               <select
                 className="form-select"
                 name="tankId"
@@ -757,7 +802,7 @@ function FuelReceiving() {
                 <option value="">Select Tank</option>
                 {formData?.tanks?.map(tank => (
                   <option key={tank.tank_id} value={tank.tank_id}>
-                    {tank.tank_name} ({tank.capacity_liters?.toLocaleString() || tank.capacity}L) - {tank.site_name || tank.location}
+                    {tank.tank_name} - {tank.site_name || tank.location}
                   </option>
                 ))}
               </select>
@@ -766,6 +811,62 @@ function FuelReceiving() {
                   {formErrors.tankId}
                 </div>
               )}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Supplier Name</label>
+              <select
+                className="form-select"
+                name="supplierId"
+                value={formValues.supplierId}
+                onChange={handleInputChange}
+                disabled={isLoading}
+                required
+              >
+                <option value="">Select Supplier</option>
+                {formData?.suppliers?.map(supplier => (
+                  <option key={supplier.supplier_id} value={supplier.supplier_id}>
+                    {supplier.supplier_name}
+                  </option>
+                ))}
+                <option value="other">Other (Enter manually)</option>
+              </select>
+              {submitted && formErrors.supplierId && (
+                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
+                  {formErrors.supplierId}
+                </div>
+              )}
+            </div>
+
+            {formValues.supplierId === "other" && (
+              <div className="form-group">
+                <label className="form-label">Custom Supplier Name</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  name="customSupplierName"
+                  value={formValues.customSupplierName || ""}
+                  onChange={handleInputChange}
+                  placeholder="Enter supplier name"
+                  required
+                  ref={customSupplierRef}
+                />
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="form-label">Diesel Rate (QAR/Liter)</label>
+              <input
+                type="number"
+                className="form-input"
+                name="dieselRate"
+                value={formValues.dieselRate || ""}
+                onChange={handleInputChange}
+                placeholder="Enter diesel rate"
+                min="0"
+                step="0.01"
+                required
+              />
             </div>
 
             <div className="form-group">
@@ -793,44 +894,6 @@ function FuelReceiving() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Supplier Name</label>
-              <select
-                className="form-select"
-                name="supplierId"
-                value={formValues.supplierId}
-                onChange={handleInputChange}
-                disabled={isLoading}
-                required
-              >
-                <option value="">Select Supplier</option>
-                {formData?.suppliers?.map(supplier => (
-                  <option key={supplier.supplier_id} value={supplier.supplier_id}>
-                    {supplier.supplier_name}
-                  </option>
-                ))}
-              </select>
-              {submitted && formErrors.supplierId && (
-                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
-                  {formErrors.supplierId}
-                </div>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Mobile Number</label>
-              <input
-                type="tel"
-                className="form-input"
-                name="mobileNumber"
-                value={formValues.mobileNumber}
-                onChange={handleInputChange}
-                placeholder="+974 XXXX XXXX"
-                pattern="\+974 [0-9]{4} [0-9]{4}"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="form-group">
               <label className="form-label">Notes (Optional)</label>
               <input
                 type="text"
@@ -845,7 +908,7 @@ function FuelReceiving() {
           </div>
 
           {/* Signature/Fingerprint Section */}
-          <div className="form-group" style={{ marginBottom: '20px' }}>
+          {/* <div className="form-group" style={{ marginBottom: '20px' }}>
             <label className="form-label">Receiver Signature/Fingerprint</label>
             <div
               className={`thumbprint-pad ${signatureCaptured ? 'thumbprint-captured' : ''}`}
@@ -864,7 +927,7 @@ function FuelReceiving() {
                 <span>👆 Click to capture signature/fingerprint</span>
               )}
             </div>
-          </div>
+          </div> */}
 
           <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
             <button
@@ -895,14 +958,14 @@ function FuelReceiving() {
               )}
             </button>
 
-            <button
+            {/* <button
               type="button"
               className="btn btn-invoice"
               onClick={generateInvoice}
               disabled={isLoading}
             >
               📄 Generate Invoice
-            </button>
+            </button> */}
 
             <button
               type="button"
@@ -918,21 +981,13 @@ function FuelReceiving() {
 
       {/* Recent Fuel Receiving Records Section */}
       <div style={{
-        background: '#f4fafd',
-        borderRadius: 16,
-        boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
-        marginTop: 40,
-        padding: 0,
-        overflow: 'hidden',
+       marginTop: 40,
       }}>
-        <div style={{
-          padding: '28px 32px 0 32px',
-        }}>
+        <div>
           <div style={{
-            fontWeight: 800,
-            fontSize: 32,
-            color: '#23476a',
-            letterSpacing: 0.5,
+            fontWeight: 600,
+            fontSize: 24,
+            color: '#015998',
             marginBottom: 0,
           }}>
             Recent Fuel Receiving Records
@@ -941,11 +996,11 @@ function FuelReceiving() {
         <div style={{
           width: '100%',
           height: 5,
-          background: 'linear-gradient(90deg, #25b86f 0%, #2563eb 100%)',
+          background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
           borderRadius: 8,
           margin: '10px 0 18px 0',
         }} />
-        <div style={{ padding: '0 32px 32px 32px' }}>
+        <div>
           {isLoadingRecords ? (
             <div style={{
               display: 'flex',
@@ -967,99 +1022,116 @@ function FuelReceiving() {
             </div>
           ) : (
             <>
-              <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: 'transparent' }}>
-                <thead>
-                  <tr style={{
-                    background: 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)',
-                    borderTopLeftRadius: 12,
-                    borderTopRightRadius: 12,
-                    boxShadow: '0 8px 32px 0 rgba(37,99,235,0.18), 0 1.5px 0 #e0e7ef',
-                    zIndex: 10,
-                    position: 'relative',
-                    borderBottom: '3px solid #e0e7ef',
-                    transform: 'translateY(-12px)',
-                    marginBottom: 8,
-                    boxSizing: 'border-box',
-                    filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.10))',
-                  }}>
-                    <th style={{ color: '#fff', fontWeight: 800, fontSize: 18, padding: '16px 24px', border: 'none', borderTopLeftRadius: 12, textAlign: 'left', letterSpacing: 1.2, borderRight: '1.5px solid rgba(255,255,255,0.18)' }}>Receipt #</th>
-                    <th style={{ color: '#fff', fontWeight: 800, fontSize: 18, padding: '16px 24px', border: 'none', textAlign: 'left', letterSpacing: 1.2, borderRight: '1.5px solid rgba(255,255,255,0.18)' }}>Date</th>
-                    <th style={{ color: '#fff', fontWeight: 800, fontSize: 18, padding: '16px 24px', border: 'none', textAlign: 'left', letterSpacing: 1.2, borderRight: '1.5px solid rgba(255,255,255,0.18)' }}>Quantity</th>
-                    <th style={{ color: '#fff', fontWeight: 800, fontSize: 18, padding: '16px 24px', border: 'none', textAlign: 'left', letterSpacing: 1.2, borderRight: '1.5px solid rgba(255,255,255,0.18)' }}>Tank</th>
-                    <th style={{ color: '#fff', fontWeight: 800, fontSize: 18, padding: '16px 24px', border: 'none', textAlign: 'left', letterSpacing: 1.2, borderRight: '1.5px solid rgba(255,255,255,0.18)' }}>Supplier</th>
-                    <th style={{ color: '#fff', fontWeight: 800, fontSize: 18, padding: '16px 24px', border: 'none', textAlign: 'left', letterSpacing: 1.2, borderRight: '1.5px solid rgba(255,255,255,0.18)' }}>Received By</th>
-                    <th style={{ color: '#fff', fontWeight: 800, fontSize: 18, padding: '16px 24px', border: 'none', borderTopRightRadius: 12, textAlign: 'left', letterSpacing: 1.2 }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {receivingRecords.length === 0 ? (
+              <div className="table-container" style={{ overflowX: 'auto', borderRadius: '12px' }}>
+                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: 'transparent' }}>
+                  <thead style={{ background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)' }}>
                     <tr>
-                      <td colSpan="7" style={{ 
-                        padding: '40px 24px', 
-                        textAlign: 'center', 
-                        color: '#666',
-                        fontSize: '16px',
-                        fontWeight: '500'
-                      }}>
-                        No records found
-                      </td>
+                      <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15, whiteSpace: "nowrap"  }}>Receipt #</th>
+                      <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15, whiteSpace: "nowrap"  }}>Date</th>
+                      <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15, whiteSpace: "nowrap"  }}>Quantity</th>
+                      <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15, whiteSpace: "nowrap"  }}>Diesel Rate</th>
+                      <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15, whiteSpace: "nowrap"  }}>Tank</th>
+                      <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15, whiteSpace: "nowrap"  }}>Supplier</th>
+                      <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15, whiteSpace: "nowrap"  }}>Received By</th>
+                      <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15, whiteSpace: "nowrap"  }}>Actions</th>
                     </tr>
-                  ) : (
-                    receivingRecords.map((rec, idx) => (
-                      <tr key={rec.id || idx} style={{
-                        background: '#fff',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                        borderRadius: 10,
-                        marginTop: 8,
-                        marginBottom: 8,
-                        height: 60,
-                      }}>
-                        <td style={{ padding: '14px 24px', fontWeight: 500, textAlign: 'left' }}>
-                          {rec.receipt_number || rec.receiptNumber}
-                        </td>
-                        <td style={{ padding: '14px 24px', textAlign: 'left' }}>
-                          {rec.date_time ? new Date(rec.date_time).toLocaleString() : 
-                           rec.created_at ? new Date(rec.created_at).toLocaleString() : 'N/A'}
-                        </td>
-                        <td style={{ padding: '14px 24px', textAlign: 'left' }}>
-                          {rec.quantity} L
-                        </td>
-                        <td style={{ padding: '14px 24px', textAlign: 'left' }}>
-                          {getTankName(rec.tank_id || rec.tankId)}
-                        </td>
-                        <td style={{ padding: '14px 24px', textAlign: 'left' }}>
-                          {getSupplierName(rec.supplier_id || rec.supplierId)}
-                        </td>
-                        <td style={{ padding: '14px 24px', textAlign: 'left' }}>
-                          {getEmployeeDisplayName(rec.received_by || rec.receivedBy)}
-                        </td>
-                        <td style={{ padding: '14px 24px', textAlign: 'left' }}>
-                          <button 
-                            onClick={() => handleEdit(rec.id)}
-                            style={{
-                              background: 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)',
-                              color: '#fff',
-                              border: 'none',
-                              borderRadius: 8,
-                              padding: '6px 22px',
-                              fontWeight: 700,
-                              fontSize: 15,
-                              cursor: 'pointer',
-                              letterSpacing: 1,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
-                            }}
-                          >
-                            <span style={{ fontSize: 18, marginRight: 4 }}>✏️</span> EDIT
-                          </button>
+                  </thead>
+                  <tbody>
+                    {receivingRecords.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" style={{ 
+                          padding: '40px 24px', 
+                          textAlign: 'center', 
+                          color: '#666',
+                          fontSize: '16px',
+                          fontWeight: '500'
+                        }}>
+                          No records found
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      receivingRecords.map((rec, idx) => (
+                        <tr key={rec.id || idx} style={{
+                          background: '#fff',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                          borderRadius: 10,
+                          marginTop: 8,
+                          marginBottom: 8,
+                          height: 60,
+                        }}>
+                          <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', fontWeight: 500, textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
+                            {rec.receipt_number || rec.receiptNumber}
+                          </td>
+                          <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
+                            {rec.date_time ? new Date(rec.date_time).toLocaleString() : 
+                             rec.created_at ? new Date(rec.created_at).toLocaleString() : 'N/A'}
+                          </td>
+                          <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
+                            {rec.quantity} L
+                          </td>
+                          <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
+                            {rec.diesel_rate || rec.dieselRate ? `QAR ${rec.diesel_rate || rec.dieselRate}` : 'N/A'}
+                          </td>
+                          <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
+                            {getTankName(rec.tank_id || rec.tankId)}
+                          </td>
+                          <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
+                            {getSupplierName(rec.supplier_id || rec.supplierId)}
+                          </td>
+                          <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)', whiteSpace: 'nowrap' }}>
+                            {getEmployeeDisplayName(rec.received_by || rec.receivedBy)}
+                          </td>
+                          <td style={{ padding: 'clamp(10px, 2vw, 14px) clamp(16px, 2vw, 24px)', textAlign: 'left', fontSize: 'clamp(12px, 1.5vw, 14px)' }}>
+                            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                              <button 
+                                onClick={() => handleEdit(rec.id)}
+                                style={{
+                                  background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
+                                  color: '#fff',
+                                  border: 'none',
+                                  borderRadius: 8,
+                                  padding: '6px 16px',
+                                  fontWeight: 700,
+                                  fontSize: 15,
+                                  cursor: 'pointer',
+                                  letterSpacing: 1,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
+                                }}
+                              >
+                                <span style={{ fontSize: 18, marginRight: 4 }}><i class="fa fa-pencil" aria-hidden="true"></i></span> 
+                              </button>
+                              <button
+                                onClick={() => handleDelete(rec.id)}
+                                style={{
+                                  background: '#dc2626',
+                                  color: '#fff',
+                                  border: 'none',
+                                  borderRadius: 8,
+                                  padding: '6px 16px',
+                                  fontWeight: 700,
+                                  fontSize: 15,
+                                  cursor: 'pointer',
+                                  letterSpacing: 1,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                                  transition: 'background 0.2s',
+                                }}
+                              >
+                                <span style={{ fontSize: 18, marginRight: 4 }}><i class="fa fa-trash" aria-hidden="true"></i> </span> 
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
               {/* Pagination Controls */}
               {totalPages > 1 && (
@@ -1075,7 +1147,7 @@ function FuelReceiving() {
                     onClick={goToPrevPage}
                     disabled={currentPage === 1}
                     style={{
-                      background: currentPage === 1 ? '#e5e7eb' : 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)',
+                      background: currentPage === 1 ? '#e5e7eb' : 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
                       color: currentPage === 1 ? '#9ca3af' : '#fff',
                       border: 'none',
                       borderRadius: 8,
@@ -1098,7 +1170,7 @@ function FuelReceiving() {
                         key={page}
                         onClick={() => goToPage(page)}
                         style={{
-                          background: currentPage === page ? 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)' : '#fff',
+                          background: currentPage === page ? 'linear-gradient(135deg, #25b86f 0%, #015998 100%)' : '#fff',
                           color: currentPage === page ? '#fff' : '#374151',
                           border: currentPage === page ? 'none' : '1px solid #d1d5db',
                           borderRadius: 8,
@@ -1118,7 +1190,7 @@ function FuelReceiving() {
                     onClick={goToNextPage}
                     disabled={currentPage === totalPages}
                     style={{
-                      background: currentPage === totalPages ? '#e5e7eb' : 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)',
+                      background: currentPage === totalPages ? '#e5e7eb' : 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
                       color: currentPage === totalPages ? '#9ca3af' : '#fff',
                       border: 'none',
                       borderRadius: 8,
@@ -1266,7 +1338,7 @@ function FuelReceiving() {
 
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                    Tank
+                    Tank Location
                   </label>
                   <select
                     name="tankId"
@@ -1282,7 +1354,7 @@ function FuelReceiving() {
                     <option value="">Select Tank</option>
                     {formData?.tanks?.map(tank => (
                       <option key={tank.tank_id} value={tank.tank_id}>
-                        {tank.tank_name} ({tank.capacity_liters?.toLocaleString() || tank.capacity}L)
+                        {tank.tank_name} - {tank.site_name || tank.location}
                       </option>
                     ))}
                   </select>
@@ -1353,14 +1425,15 @@ function FuelReceiving() {
 
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                    Mobile Number
+                    Diesel Rate (QAR/Liter)
                   </label>
                   <input
-                    type="tel"
-                    name="mobileNumber"
-                    value={editFormValues.mobileNumber || ''}
+                    type="number"
+                    name="dieselRate"
+                    value={editFormValues.dieselRate || ''}
                     onChange={handleEditInputChange}
-                    placeholder="+974 XXXX XXXX"
+                    min="0"
+                    step="0.01"
                     style={{
                       width: '100%',
                       padding: '12px',
@@ -1415,7 +1488,7 @@ function FuelReceiving() {
                   type="submit"
                   disabled={isUpdating}
                   style={{
-                    background: 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)',
+                    background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
                     color: '#fff',
                     border: 'none',
                     borderRadius: '8px',

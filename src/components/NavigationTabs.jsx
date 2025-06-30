@@ -6,11 +6,11 @@ import { useUserStore } from "../store/userStore.js";
 const allNavItems = [
   { id: 'dashboard', iconClass: 'fas fa-tachometer-alt', label: 'Dashboard', path: '/', roles: ['diesel-manager', 'site-incharge', 'admin'] },
   { id: 'receiving', iconClass: 'fas fa-truck-loading', label: 'Fuel Receiving', path: '/receiving', roles: ['diesel-manager', 'admin'] },
-  { id: 'consumption', iconClass: 'fas fa-gas-pump', label: 'Fuel Consumption', path: '/consumption', roles: ['diesel-manager', 'driver', 'site-incharge', 'admin'] },
+  { id: 'consumption', iconClass: 'fas fa-gas-pump', label: 'Fuel Usage', path: '/usage', roles: ['diesel-manager', 'driver', 'site-incharge', 'admin'] },
   { id: 'reports', iconClass: 'fas fa-chart-line', label: 'Reports', path: '/reports', roles: ['diesel-manager', 'admin'] },
   { id: 'invoices', iconClass: 'fas fa-file-invoice-dollar', label: 'Invoices', path: '/invoices', roles: ['diesel-manager', 'admin'] },
   { id: 'audit', iconClass: 'fas fa-clipboard-list', label: 'Audit Trail', path: '/audit', roles: ['diesel-manager', 'admin'] },
-  { id: 'user-management', iconClass: 'fas fa-users-cog', label: 'User Management', path: '/user-management', roles: ['admin'] },
+  { id: 'user-management', iconClass: 'fas fa-users-cog', label: 'UserManagement', path: '/user-management', roles: ['admin'] },
 ];
 
 const NavigationTabs = () => {
@@ -41,7 +41,7 @@ const NavigationTabs = () => {
             `nav-tab${isActive ? " active" : ""}`
           }
         >
-          <i className={tab.iconClass} style={{ marginRight: 8 }}></i>{tab.label}
+            <i className={tab.iconClass} style={{ marginRight: 8  }}></i>{tab.label}
         </NavLink>
       ))}
     </div>

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import '../styles/components.css';
 import { useUserStore } from '../store/userStore.js';
 import { logout } from '../services/authService.js';
+import { FiLogOut } from "react-icons/fi";
 
 const Header = () => {
   const { user, profile } = useUserStore();
@@ -55,13 +56,13 @@ const Header = () => {
   };
 
   return (
-    <div className="header" style={{ padding: '10px', paddingBottom: '30px' }}>
-      <div className="upper-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',marginTop:'10px' }}>
+    <div className="header" style={{ padding: '10px' }}>
+      <div className="upper-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', }}>
         {/* Logo and App Name horizontally aligned */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-          <img src="https://i.ibb.co/YFHXfVz4/logo.png" alt="MARBU Logo" style={{ width: 130, height: 130, objectFit: 'contain' }} />
-          <span style={{ background: 'linear-gradient(90deg, #2563eb 0%, #25b86f 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', fontWeight: 'bold', fontSize: '2em', letterSpacing: '2px', fontFamily: 'inherit' }}>
-            Diesel Log App
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <img src="https://i.ibb.co/YFHXfVz4/logo.png" alt="MARBU Logo" style={{ width: 150, objectFit: 'contain' }} />
+            <span style={{ background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', fontWeight: 'bold', fontSize: '2em', fontFamily: 'inherit' }}>
+            PMV
           </span>
         </div>
         {/* User Info on the right */}
@@ -80,14 +81,13 @@ const Header = () => {
             <div style={{
               position: 'absolute',
               top: '100%',
-              right: 0,
-              marginTop: 12,
-              background: '#fff',
+              right: '50%',
+              transform: 'translateX(50%)',
+              marginTop: 5,
+              background: 'rgb(255, 255, 255)',
               borderRadius: 10,
-              boxShadow: '0 8px 32px 0 rgba(37,99,235,0.18)',
-              minWidth: 180,
+              boxShadow: 'rgba(37, 99, 235, 0.18) 0px 8px 32px 0px',
               zIndex: 100,
-              padding: '8px 0',
               display: 'flex',
               flexDirection: 'column',
               fontWeight: 500,
@@ -95,18 +95,22 @@ const Header = () => {
               <button onClick={handleLogout} style={{
                 background: 'none',
                 border: 'none',
-                color: '#dc2626',
-                fontSize: 16,
+                color: 'rgb(220, 38, 38)',
+                fontSize: 14,
                 padding: '12px 24px',
-                textAlign: 'left',
                 cursor: 'pointer',
-                width: '100%',
                 transition: 'background 0.2s',
+                display: 'flex',
+                justifyContent: 'center',
+                flexGrow: 0,
               }}
                 onMouseOver={e => e.currentTarget.style.background = 'rgba(220,38,38,0.08)'}
                 onMouseOut={e => e.currentTarget.style.background = 'none'}
               >
-                <span style={{ marginRight: 8 }}>🚪</span>Logout
+                <span style={{ marginRight: 8, display: 'inline-flex', alignItems: 'center' }}>
+                  <FiLogOut size={20} />
+                </span>
+                Logout
               </button>
             </div>
           )}

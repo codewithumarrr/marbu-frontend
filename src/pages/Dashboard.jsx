@@ -60,12 +60,12 @@ function Dashboard() {
   const activityHeaders = [
     "Date & Time",
     "Vehicle/Equipment",
-    "Operator",
-    "Mobile",
+    "Emp Role",
+    "Emp Name",
     "Quantity (L)",
     "Job Number",
     "Status",
-  ];
+  ];    
 
   // Format dashboard stats for display
   const formatNumber = (num) => {
@@ -85,12 +85,12 @@ function Dashboard() {
         alignItems: 'center',
         marginBottom: '20px'
       }}>
-        <h2 style={{ color: '#015998', margin: 0 }}>Dashboard Overview</h2>
+        <h2 style={{ color: '#015998', margin: 0, fontWeight: 700, fontSize: 27 }}>Dashboard Overview</h2>
         <button
           onClick={handleRefresh}
           disabled={isLoading || refreshing}
           style={{
-            background: '#015998',
+            background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
             color: 'white',
             border: 'none',
             borderRadius: '6px',
@@ -199,8 +199,8 @@ function Dashboard() {
                   <>
                     <td>{row.date || row.consumption_datetime}</td>
                     <td>{row.vehicle || `${row.vehicleType} ${row.vehicleId}`}</td>
-                    <td>{row.operator || row.operatorName}</td>
-                    <td>{row.mobile || row.operatorMobile || 'N/A'}</td>
+                    <td>{row.role || row.empRole || row.employeeRole || 'N/A'}</td>
+                    <td>{row.employeeName || row.name || row.operatorName || 'N/A'}</td>
                     <td>{row.quantity || row.fuelUsed}</td>
                     <td>{row.job || row.jobNumber}</td>
                     <td>

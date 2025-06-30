@@ -113,7 +113,7 @@ function Invoices() {
 
   return (
     <div id="invoices" className="content-panel">
-      <h2 style={{ marginBottom: '20px', color: '#015998' }}>Diesel Invoices</h2>
+      <h2 style={{ marginBottom: '20px', color: '#015998',fontSize:27,fontWeight:700 }}>Diesel Invoices</h2>
       <FilterGroup onSubmit={e => {
         e.preventDefault();
         const form = e.target;

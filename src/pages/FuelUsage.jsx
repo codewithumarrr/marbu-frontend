@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Select from 'react-select';
 import "../styles/pages.css";
+
 import {
   getAllDieselConsumption,
   getDieselConsumptionById,
@@ -19,7 +20,19 @@ import { generateInvoiceFromConsumption } from "../services/invoicesService.js";
 import { generateInvoiceExcel } from "../utils/excelExport.js";
 import { startAuthentication } from '@simplewebauthn/browser';
 
-function FuelConsumption() {
+// Dummy data for portable containers
+// const dummyPortableContainers = [
+//   { id: 1, name: 'Drum 001', type: 'Drum', capacity: 200, location: 'Site A' },
+//   { id: 2, name: 'Drum 002', type: 'Drum', capacity: 200, location: 'Site A' },
+//   { id: 3, name: 'Jerry Can 001', type: 'Jerry Can', capacity: 20, location: 'Site B' },
+//   { id: 4, name: 'Jerry Can 002', type: 'Jerry Can', capacity: 20, location: 'Site B' },
+//   { id: 5, name: 'Portable Tank 001', type: 'Portable Tank', capacity: 1000, location: 'Site C' },
+//   { id: 6, name: 'Portable Tank 002', type: 'Portable Tank', capacity: 1000, location: 'Site C' },
+//   { id: 7, name: 'Generator Tank', type: 'Generator Tank', capacity: 50, location: 'Site A' },
+//   { id: 8, name: 'Welding Machine Tank', type: 'Welding Tank', capacity: 30, location: 'Site B' }
+// ];
+
+function FuelUsage() {
   const { user, profile } = useUserStore();
   const [formData, setFormData] = useState({
     vehicleTypes: [],
@@ -34,6 +47,7 @@ function FuelConsumption() {
   const [formValues, setFormValues] = useState({
     vehicleEquipmentType: '',
     plateNumberMachineId: '',
+    // portableContainerName: '',
     dateTime: new Date().toISOString().slice(0, 16),
     jobNumber: [],
     operatorName: '',
@@ -49,6 +63,7 @@ function FuelConsumption() {
   const [submitted, setSubmitted] = useState(false);
   const [odometerReadings, setOdometerReadings] = useState([]);
   const [isRented, setIsRented] = useState(false);
+  // const [isPortableContainer, setIsPortableContainer] = useState(false);
   const [signatureCaptured, setSignatureCaptured] = useState(false);
   const [signatureData, setSignatureData] = useState('');
 
@@ -164,27 +179,6 @@ function FuelConsumption() {
     }
   };
 
-  // Load vehicles when vehicle type changes
-  useEffect(() => {
-    // Only call API if vehicleEquipmentType is not empty/null/undefined
-    if (formValues.vehicleEquipmentType && formValues.vehicleEquipmentType !== "") {
-      setIsLoading(true);
-      getVehiclesByType(formValues.vehicleEquipmentType)
-        .then(data => {
-          setVehicles(data?.data || []);
-        })
-        .catch(err => {
-          setError(err?.response?.data?.message || err.message || 'Failed to load vehicles');
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    } else {
-      setVehicles([]);
-    }
-    // eslint-disable-next-line
-  }, [formValues.vehicleEquipmentType]);
-
   // Clear errors when user starts typing
   useEffect(() => {
     if (error) {
@@ -231,12 +225,21 @@ function FuelConsumption() {
   const validateForm = () => {
     const errors = {};
 
-    if (!formValues.vehicleEquipmentType) {
-      errors.vehicleEquipmentType = 'Vehicle/Equipment type is required';
-    }
-    if (!formValues.plateNumberMachineId) {
-      errors.plateNumberMachineId = 'Plate Number / Machine ID is required';
-    }
+    // if (!isPortableContainer) {
+      // Vehicle/Equipment validation
+      if (!formValues.vehicleEquipmentType) {
+        errors.vehicleEquipmentType = 'Vehicle/Equipment type is required';
+      }
+      if (!formValues.plateNumberMachineId) {
+        errors.plateNumberMachineId = 'Plate Number / Machine ID is required';
+      }
+    // } else {
+    //   // Portable container validation
+    //   if (!formValues.portableContainerName) {
+    //     errors.portableContainerName = 'Container name/description is required';
+    //   }
+    // }
+
     if (!formValues.dateTime) {
       errors.dateTime = 'Date and time is required';
     }
@@ -283,7 +286,10 @@ function FuelConsumption() {
         ...formValues,
         signatureData: signatureData,
         signatureCaptured: signatureCaptured,
-        thumbprintData: signatureData // Map signature to thumbprint for backward compatibility
+        thumbprintData: signatureData, // Map signature to thumbprint for backward compatibility
+        // isPortableContainer: isPortableContainer,
+        // // Use appropriate identifier based on mode
+        // identifier: isPortableContainer ? formValues.portableContainerName : formValues.plateNumberMachineId
       };
 
       await createDieselConsumption(payload);
@@ -293,6 +299,7 @@ function FuelConsumption() {
       setFormValues({
         vehicleEquipmentType: '',
         plateNumberMachineId: '',
+        // portableContainerName: '',
         dateTime: new Date().toISOString().slice(0, 16),
         jobNumber: [],
         operatorName: '',
@@ -308,6 +315,7 @@ function FuelConsumption() {
       setSignatureData('');
       setSubmitted(false);
       setVehicles([]);
+      setIsRented(false);
       loadFormData();
       setOdometerReadings(prev => [...prev, Number(formValues.odometerReading)]);
     } catch (err) {
@@ -367,7 +375,9 @@ function FuelConsumption() {
     setFormErrors({});
     setSubmitted(false);
     setVehicles([]);
+    setIsRented(false);
   };
+
   // Prepare job options for react-select
   const jobOptions = (formData.jobs && formData.jobs.length > 0)
     ? formData.jobs.map(job => ({ value: job.job_number, label: job.job_number }))
@@ -450,6 +460,24 @@ function FuelConsumption() {
     setIsRented(e.target.checked);
   };
 
+  // Add handler for portable container checkbox
+  // const handlePortableContainerChange = (e) => {
+  //   setIsPortableContainer(e.target.checked);
+  //   // Clear related fields when switching modes
+  //   if (e.target.checked) {
+  //     setFormValues(prev => ({
+  //       ...prev,
+  //       vehicleEquipmentType: '',
+  //       plateNumberMachineId: ''
+  //     }));
+  //   } else {
+  //     setFormValues(prev => ({
+  //       ...prev,
+  //       portableContainerName: ''
+  //     }));
+  //   }
+  // };
+
   const previousOdometer = odometerReadings.length > 0 ? odometerReadings[odometerReadings.length - 1] : null;
 
   const SignaturePad = () => {
@@ -474,9 +502,91 @@ function FuelConsumption() {
     );
   };
 
+  // Handle plate number change with auto-population
+  const handlePlateNumberChange = (e) => {
+    const { value } = e.target;
+    setFormValues(prev => ({
+      ...prev,
+      plateNumberMachineId: value
+    }));
+
+    // Clear field error when user starts typing
+    if (formErrors.plateNumberMachineId) {
+      setFormErrors(prev => ({
+        ...prev,
+        plateNumberMachineId: ''
+      }));
+    }
+
+    // Clear vehicle type when plate number changes
+    if (value !== formValues.plateNumberMachineId) {
+      setFormValues(prev => ({
+        ...prev,
+        vehicleEquipmentType: ''
+      }));
+    }
+  };
+
+  // Use useEffect for debounced vehicle lookup
+  useEffect(() => {
+    if (formValues.plateNumberMachineId && formValues.plateNumberMachineId.length >= 3) {
+      const timeoutId = setTimeout(() => {
+        handleVehicleLookup(formValues.plateNumberMachineId);
+      }, 800);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formValues.plateNumberMachineId]);
+
+  // Handle vehicle lookup by plate number
+  const handleVehicleLookup = async (plateNumber) => {
+    if (!plateNumber || plateNumber.length < 3) return;
+    
+    try {
+      // Search through all vehicle types to find the vehicle
+      const allVehicles = [];
+      
+      // Get vehicles for each type
+      for (const vehicleType of formData.vehicleTypes || []) {
+        try {
+          const response = await getVehiclesByType(vehicleType);
+          const vehicles = response?.data || [];
+          allVehicles.push(...vehicles);
+        } catch (err) {
+          console.log(`Failed to load vehicles for type ${vehicleType}:`, err);
+        }
+      }
+      
+      // Find the vehicle by plate number
+      const foundVehicle = allVehicles.find(vehicle => 
+        vehicle.plate_number_machine_id?.toLowerCase().includes(plateNumber.toLowerCase())
+      );
+      
+      if (foundVehicle) {
+        setFormValues(prev => ({
+          ...prev,
+          vehicleEquipmentType: foundVehicle.vehicle_equipment_type || foundVehicle.type || '',
+          plateNumberMachineId: foundVehicle.plate_number_machine_id || plateNumber
+        }));
+        
+        // Auto-detect rented status based on plate number pattern
+        // Rented vehicles often have specific patterns like "RENT", "HIRE", or start with "R"
+        const plateUpper = plateNumber.toUpperCase();
+        const isRentedVehicle = plateUpper.includes('RENT') || 
+                               plateUpper.includes('HIRE') || 
+                               plateUpper.startsWith('R') ||
+                               plateUpper.includes('TEMP');
+        
+        setIsRented(isRentedVehicle);
+      }
+    } catch (err) {
+      console.log('Vehicle lookup error:', err);
+    }
+  };
+
   return (
-    <div id="consumption" className="content-panel">
-      <h2 style={{ marginBottom: '20px', color: '#015998' }}>Fuel Consumption Entry</h2>
+    <div id="usage" className="content-panel">
+      <h2 style={{ marginBottom: '20px', color: '#015998', fontWeight: 700 ,fontSize:27}}>Fuel Usage Entry</h2>
       {/* Success Message */}
       {successMessage && (
         <div className="alert alert-success" style={{ marginBottom: '20px' }}>
@@ -517,23 +627,19 @@ function FuelConsumption() {
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
 
+            {/* Plate Number - First Field */}
             <div className="form-group">
               <label className="form-label">Plate Number / Machine ID</label>
-              <select
-                className="form-select"
+              <input
+                type="text"
+                className="form-input"
                 name="plateNumberMachineId"
                 value={formValues.plateNumberMachineId}
-                onChange={handleInputChange}
-                disabled={isLoading || !formValues.vehicleEquipmentType}
+                onChange={handlePlateNumberChange}
+                placeholder="Enter plate number or machine ID"
+                disabled={isLoading}
                 required
-              >
-                <option value="">Select Vehicle/Equipment</option>
-                {vehicles.map(vehicle => (
-                  <option key={vehicle.vehicle_equipment_id} value={vehicle.plate_number_machine_id}>
-                    {vehicle.plate_number_machine_id} {vehicle.make_model ? `(${vehicle.make_model})` : ""}
-                  </option>
-                ))}
-              </select>
+              />
               {submitted && formErrors.plateNumberMachineId && (
                 <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
                   {formErrors.plateNumberMachineId}
@@ -541,21 +647,19 @@ function FuelConsumption() {
               )}
             </div>
 
+            {/* Vehicle/Equipment Type - Auto-populated */}
             <div className="form-group">
               <label className="form-label">Vehicle/Equipment Type</label>
-              <select
-                className="form-select"
+              <input
+                type="text"
+                className="form-input"
                 name="vehicleEquipmentType"
                 value={formValues.vehicleEquipmentType}
-                onChange={handleInputChange}
+                readOnly
+                placeholder="Auto-populated from plate number"
                 disabled={isLoading}
                 required
-              >
-                <option value="">Select Type</option>
-                {formData?.vehicleTypes?.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
+              />
               {submitted && formErrors.vehicleEquipmentType && (
                 <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
                   {formErrors.vehicleEquipmentType}
@@ -579,23 +683,45 @@ function FuelConsumption() {
                 </div>
               )}
             </div>
+
+            {/* Job Number - moved to where Rented checkbox was */}
+         
+
+            {/* Rented Dropdown - moved to where Job Number was */}
             <div className="form-group">
-              <label className="form-label">Job Number</label>
-              <Select
-                isMulti
-                name="jobNumber"
-                options={jobOptions}
-                value={jobOptions.filter(opt => formValues.jobNumber.includes(opt.value))}
-                onChange={handleJobNumberChange}
-                classNamePrefix="react-select"
-                placeholder="Select job(s)"
-                isDisabled={isLoading}
-                styles={customSelectStyles}
+              <label className="form-label">Rented Vehicle</label>
+              <select
+                className="form-input"
+                value={isRented ? 'yes' : 'no'}
+                onChange={(e) => setIsRented(e.target.value === 'yes')}
+                disabled={isLoading}
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </div>
+
+            {/* Tank Source - Back to read-only input */}
+            <div className="form-group">
+              <label className="form-label">Tank Source</label>
+              <input
+                type="text"
+                className="form-input"
+                name="tankSource"
+                value={formValues.tankSource}
+                onChange={handleInputChange}
+                readOnly={true}
+                disabled={isLoading}
+                required
               />
-              {submitted && formErrors.jobNumber && (
-                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.jobNumber}</div>
+              {submitted && formErrors.tankSource && (
+                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
+                  {formErrors.tankSource}
+                </div>
               )}
             </div>
+
+          
 
             <div className="form-group">
               <label className="form-label">{isRented ? 'Employee ID' : 'Employee Number'}</label>
@@ -615,7 +741,7 @@ function FuelConsumption() {
             </div>
             
             <div className="form-group">
-              <label className="form-label">Operator/Driver Name</label>
+              <label className="form-label">Driver Name</label>
               <input
                 type="text"
                 className="form-input"
@@ -649,38 +775,6 @@ function FuelConsumption() {
               )}
             </div>
 
-            <div className="form-group" style={{  marginTop: 40, marginBottom: 8 }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14 }}>
-                <input
-                  type="checkbox"
-                  checked={isRented}
-                  onChange={handleRentedChange}
-                  style={{ width: 18, height: 18, marginRight: 8 }}
-                />
-                Rented Vehicle
-              </label>
-            </div>
-
-           
-
-            <div className="form-group">
-              <label className="form-label">Tank Source</label>
-              <input
-                type="text"
-                className="form-input"
-                name="tankSource"
-                value={formValues.tankSource}
-                onChange={handleInputChange}
-                readOnly={true}
-                disabled={isLoading}
-                required
-              />
-              {submitted && formErrors.tankSource && (
-                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
-                  {formErrors.tankSource}
-                </div>
-              )}
-            </div>
             <div className="form-group">
               <label className="form-label">Quantity (Liters)</label>
               <input
@@ -702,43 +796,42 @@ function FuelConsumption() {
               )}
             </div>
             <div className="form-group">
-              <label className="form-label">Odometer (Km) / Equipment Hours</label>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 16,
-                minWidth: 0
-              }}>
-                <input
-                  type="number"
-                  className="form-input"
-                  name="odometerReading"
-                  value={formValues.odometerReading}
-                  onChange={handleInputChange}
-                  onBlur={handleOdometerBlur}
-                  onKeyDown={handleOdometerKeyDown}
-                  placeholder="Current reading"
-                  min="0"
-                  disabled={isLoading}
-                  required
-                  style={{ width: 220, minWidth: 0 }}
-                />
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 120 }}>
-                  {previousOdometer !== null && (
-                    <span style={{ color: '#666', fontSize: 13, whiteSpace: 'nowrap' }}>
-                      Previous Reading: {previousOdometer}
-                    </span>
-                  )}
-                  {(odometerTotal > 0) && (
-                    <span style={{ color: '#015998', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>
-                      Total: {odometerTotal}
-                    </span>
-                  )}
-                </div>
+              <label className="form-label">
+                Speedometer Photo (Current Reading)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                className="form-input"
+                name="speedometerImage"
+                onChange={e => setFormValues(prev => ({ ...prev, speedometerImage: e.target.files[0] }))}
+                disabled={isLoading}
+                required
+              />
+              {/* Placeholder for extracted reading from image */}
+              <div style={{ marginTop: 8, color: '#015998', fontWeight: 600 }}>
+                Extracted Reading: <span style={{ color: '#23476a' }}>[To be extracted]</span>
               </div>
-              {submitted && formErrors.odometerReading && (
-                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.odometerReading}</div>
+              {/* Hardcoded previous reading */}
+              <div style={{ color: '#666', fontSize: 13, marginTop: 4 }}>
+                Previous: 123456
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Job Number</label>
+              <Select
+                isMulti
+                name="jobNumber"
+                options={jobOptions}
+                value={jobOptions.filter(opt => formValues.jobNumber.includes(opt.value))}
+                onChange={handleJobNumberChange}
+                classNamePrefix="react-select"
+                placeholder="Select job(s)"
+                isDisabled={isLoading}
+                styles={customSelectStyles}
+              />
+              {submitted && formErrors.jobNumber && (
+                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.jobNumber}</div>
               )}
             </div>
           </div>
@@ -752,7 +845,7 @@ function FuelConsumption() {
                 <>
                   <div style={{
                     width: '16px',
-                    height: '16px',
+                    height: '16px',   
                     border: '2px solid #fff',
                     borderTop: '2px solid transparent',
                     borderRadius: '50%',
@@ -763,10 +856,9 @@ function FuelConsumption() {
                   Saving...
                 </>
               ) : (
-                <>💾 Record Consumption</>
+                <>💾 Save Record</>
               )}
             </button>
-
             <button
               type="button"
               className="btn btn-secondary"
@@ -800,4 +892,4 @@ function FuelConsumption() {
   );
 }
 
-export default FuelConsumption;
+export default FuelUsage;

@@ -4,7 +4,7 @@ import Header from "./components/Header";
 import NavigationTabs from "./components/NavigationTabs";
 import Dashboard from "./pages/Dashboard";
 import FuelReceiving from "./pages/FuelReceiving";
-import FuelConsumption from "./pages/FuelConsumption";
+import FuelUsage from "./pages/FuelUsage.jsx";
 import Reports from "./pages/Reports";
 import Invoices from "./pages/Invoices";
 import AuditTrail from "./pages/AuditTrail";
@@ -50,7 +50,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<PrivateRoute allowedRoles={['diesel-manager', 'site-incharge', 'admin', 'driver', 'operator']}><Dashboard /></PrivateRoute>} />
         <Route path="/receiving" element={<PrivateRoute allowedRoles={['diesel-manager', 'admin']}><FuelReceiving /></PrivateRoute>} />
-        <Route path="/consumption" element={<PrivateRoute allowedRoles={['diesel-manager', 'driver', 'site-incharge', 'admin']}><FuelConsumption /></PrivateRoute>} />
+        <Route path="/usage" element={<PrivateRoute allowedRoles={['diesel-manager', 'driver', 'site-incharge', 'admin']}><FuelUsage /></PrivateRoute>} />
         <Route path="/reports" element={<PrivateRoute allowedRoles={['diesel-manager', 'admin']}><Reports /></PrivateRoute>} />
         <Route path="/invoices" element={<PrivateRoute allowedRoles={['diesel-manager', 'admin']}><Invoices /></PrivateRoute>} />
         <Route path="/audit" element={<PrivateRoute allowedRoles={['diesel-manager', 'admin']}><AuditTrail /></PrivateRoute>} />
