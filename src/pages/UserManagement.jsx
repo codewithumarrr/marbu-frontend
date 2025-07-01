@@ -14,6 +14,10 @@ const UserManagement = () => {
   const [roles, setRoles] = useState([]);
   const [siteId, setSiteId] = useState('');
   const [sites, setSites] = useState([]);
+  const [qatarIdNumber, setQatarIdNumber] = useState('');
+  const [profession, setProfession] = useState('');
+  const [userPicture, setUserPicture] = useState(null);
+  const [userPicturePreview, setUserPicturePreview] = useState(null);
   const [nameError, setNameError] = useState('');
   const [userError, setUserError] = useState('');
   const [mobileError, setMobileError] = useState('');
@@ -63,11 +67,11 @@ const UserManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     setSubmitted(true);
     setApiError('');
     let valid = true;
-    
+
     if (!name.trim()) {
       setNameError('Name is required');
       valid = false;
@@ -104,7 +108,7 @@ const UserManagement = () => {
     } else {
       setSiteError('');
     }
-    
+
     if (!valid) return;
 
     setLoading(true);
@@ -112,52 +116,66 @@ const UserManagement = () => {
       // Get role_id from role name
       const selectedRole = roles.find(r => r.role_name === roleName);
       const role_id = selectedRole?.role_id;
-      
+
       if (!role_id) {
         setApiError('Invalid role selected');
         setLoading(false);
         return;
       }
 
+      const formData = new FormData();
       if (editUserId !== null) {
-        // Update existing user - use database field names
-        const updateData = {
-          employee_number: employeeNumber,
-          employee_name: name,
-          mobile_number: mobileNumber,
-          role_id: role_id,
-          site_id: parseInt(siteId),
-          ...(password && { password })
-        };
-        await updateUser(editUserId, updateData);
+        // Update: use snake_case for backend
+        formData.append('employee_number', employeeNumber);
+        formData.append('employee_name', name);
+        formData.append('mobile_number', mobileNumber);
+        formData.append('role_id', role_id);
+        formData.append('site_id', siteId);
+        formData.append('qatar_id_number', qatarIdNumber);
+        formData.append('profession', profession);
+        if (password) formData.append('password', password);
+        if (userPicture) formData.append('user_picture', userPicture);
+
+        await updateUser(editUserId, formData, true); // true for multipart
         setEditUserId(null);
         setShowUpdateModal(true);
+        setUserPicture(null);
+        setUserPicturePreview(null);
       } else {
-        // Create new user using registration API - use registration schema field names
-        const createData = {
-          employeeNumber: employeeNumber,  // registration API expects this format
-          name: name,                      // registration API expects this format
-          role: roleName,                  // registration API expects role name, not ID
-          mobile_number: mobileNumber,     // this is correct
-          site_id: parseInt(siteId),       // this is correct
-          password: password               // this is correct
-        };
-        await register(createData);
+        // Create: use camelCase for registration endpoint, send all fields as FormData
+        formData.append('employeeNumber', employeeNumber);
+        formData.append('name', name);
+        formData.append('role', roleName);
+        formData.append('mobile_number', mobileNumber);
+        formData.append('site_id', siteId);
+        formData.append('qatar_id_number', qatarIdNumber);
+        formData.append('profession', profession);
+        if (password) formData.append('password', password);
+        if (userPicture) formData.append('user_picture', userPicture);
+
+        await register(formData, true); // true for multipart
         setShowCreateModal(true);
       }
 
-      // Reset form
+      // Reset form and file input
       setName('');
       setEmployeeNumber('');
       setMobileNumber('');
       setPassword('');
       setRoleName('');
       setSiteId('');
+      setQatarIdNumber('');
+      setProfession('');
+      setUserPicture(null);
+      setUserPicturePreview(null);
+      // Reset file input value so it can be picked again
+      const fileInput = document.getElementById('user-picture-upload');
+      if (fileInput) fileInput.value = '';
       setSubmitted(false);
-      
+
       // Reload users list
       await loadUsers();
-      
+
     } catch (err) {
       setApiError(err?.response?.data?.message || err.message || 'Error saving user');
     } finally {
@@ -172,8 +190,15 @@ const UserManagement = () => {
     setPassword(''); // Do not prefill password for security
     setRoleName(user.role_name);
     setSiteId(user.site_id);
-    setEditUserId(user.employee_id);
+    setQatarIdNumber(user.qatar_id_number || '');
+    setProfession(user.profession || '');
+    setUserPicture(null);
+    setUserPicturePreview(user.user_picture || null);
+    setEditUserId(user.user_id || user.employee_id);
     setSubmitted(false);
+    // Reset file input value
+    const fileInput = document.getElementById('user-picture-upload');
+    if (fileInput) fileInput.value = '';
   };
 
   const handleDelete = async (user) => {
@@ -203,7 +228,12 @@ const UserManagement = () => {
 
         <div style={{ color: '#015998', marginBottom: 20, fontWeight: 700, fontSize: 27 }}>User Management</div>
 
-        <form style={{ width: '100%' }} onSubmit={handleSubmit} noValidate>
+        <form
+          style={{ width: '100%' }}
+          onSubmit={handleSubmit}
+          noValidate
+          encType="multipart/form-data"
+        >
           {apiError && (
             <div style={{
               background: '#fef2f2',
@@ -218,6 +248,75 @@ const UserManagement = () => {
               {apiError}
             </div>
           )}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <label htmlFor="user-picture-upload" style={{ cursor: 'pointer' }}>
+                <div
+                  style={{
+                    width: 110,
+                    height: 110,
+                    borderRadius: '50%',
+                    background: '#f3f4f6',
+                    border: '3px solid #25b86f',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    marginBottom: 8,
+                  }}
+                >
+                  {userPicturePreview ? (
+                    <img
+                      src={userPicturePreview}
+                      alt="User Preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    (() => {
+                      let userPicUrl = null;
+                      if (editUserId !== null) {
+                        const userObj = users.find(
+                          u =>
+                            (u.user_id === editUserId || u.employee_id === editUserId) &&
+                            u.user_picture &&
+                            typeof u.user_picture === 'string' &&
+                            u.user_picture.trim() !== ''
+                        );
+                        if (userObj) userPicUrl = userObj.user_picture;
+                      }
+                      return userPicUrl ? (
+                        <img
+                          src={userPicUrl}
+                          alt="Profile"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <span style={{ color: '#bbb', fontSize: 48 }}>+</span>
+                      );
+                    })()
+                  )}
+                </div>
+                <input
+                  id="user-picture-upload"
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={e => {
+                    const file = e.target.files[0];
+                    setUserPicture(file);
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => setUserPicturePreview(reader.result);
+                      reader.readAsDataURL(file);
+                    } else {
+                      setUserPicturePreview(null);
+                    }
+                  }}
+                />
+              </label>
+              <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>Upload Picture</div>
+            </div>
+          </div>
           <div className="form-grid" style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
@@ -345,6 +444,28 @@ const UserManagement = () => {
                 <div style={{ color: '#dc2626', fontSize: 12, marginTop: 3 }}>{siteError}</div>
               )}
             </div>
+          <div className="form-group">
+            <label className="form-label">Qatar ID Number</label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Enter Qatar ID Number"
+              value={qatarIdNumber}
+              onChange={e => setQatarIdNumber(e.target.value)}
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Profession</label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Enter Profession"
+              value={profession}
+              onChange={e => setProfession(e.target.value)}
+              style={{ width: '100%' }}
+            />
+          </div>
           </div>
           <button type="submit" style={{
             width: 'auto',

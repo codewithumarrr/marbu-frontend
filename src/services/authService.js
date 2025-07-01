@@ -24,11 +24,18 @@ export async function login(credentials) {
 }
 
 // Register new user
-export async function register(userData) {
+export async function register(userData, isFormData = false) {
   const { setError } = useUserStore.getState();
-  
+
   try {
-    const response = await api.post('/auth/register', userData);
+    let response;
+    if (isFormData && userData instanceof FormData) {
+      response = await api.post('/auth/register', userData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    } else {
+      response = await api.post('/auth/register', userData);
+    }
     return response.data;
   } catch (error) {
     setError(error.response?.data?.message || error.message);
@@ -160,7 +167,9 @@ export async function updateUser(id, userData) {
   const { setError } = useUserStore.getState();
   
   try {
-    const response = await api.put(`/users/${id}`, userData);
+    const response = await api.put(`/users/${id}`, userData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
     return response.data;
   } catch (error) {
     setError(error.response?.data?.message || error.message);

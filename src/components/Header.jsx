@@ -1,13 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
 import '../styles/components.css';
 import { useUserStore } from '../store/userStore.js';
-import { logout } from '../services/authService.js';
+import { logout, getProfile } from '../services/authService.js';
 import { FiLogOut } from "react-icons/fi";
+import userPlaceholder from "../assets/user-placeholder.png";
+
+const userRoles = {
+  "diesel-manager": "Diesel Manager",
+  "admin": "Admin",
+  "driver": "Driver",
+  "site-incharge": "Site Incharge",
+  "operator": "Operator",
+}
 
 const Header = () => {
-  const { user, profile } = useUserStore();
+  const { user, profile: storeProfile } = useUserStore();
+  const [profile, setProfile] = useState(storeProfile || null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const profileRef = useRef(null);
+
+  useEffect(() => {
+    getProfile().then(res => {
+      setProfile(res?.data?.user || null);
+    });
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -69,11 +85,15 @@ const Header = () => {
         <div className="user-info" style={{ marginTop: 0, paddingTop: 0, borderTop: 'none', position: 'relative' }} ref={profileRef}>
           <div className="user-badge" onClick={handleProfileClick} style={{ cursor: 'pointer' }}>
             <div className="user-img">
-              <img src="https://picsum.photos/200" alt="User" />
+              <img
+                src={profile?.user_picture || userPlaceholder}
+                alt="User"
+                onError={e => { e.target.onerror = null; e.target.src = userPlaceholder; }}
+              />
             </div>
             <div className="user-details">
               <div className="user-name">{getDisplayName()}</div>
-              <div className="user-designation">{getUserRole()}</div>
+              <div className="user-designation">{userRoles[getUserRole()]}</div>
             </div>
           </div>
           {/* Dropdown menu */}
