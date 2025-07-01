@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { startAuthentication } from '@simplewebauthn/browser';
 
-const WebAuthnButton = () => {
+const WebAuthnButton = ({ onSuccess, onError, disabled }) => {
   const [modal, setModal] = useState({ open: false, success: false });
 
   const handleWebAuthn = async () => {
@@ -17,8 +17,10 @@ const WebAuthnButton = () => {
 
       await startAuthentication(options);
       setModal({ open: true, success: true });
+      if (onSuccess) onSuccess();
     } catch (err) {
       setModal({ open: true, success: false });
+      if (onError) onError(err);
       console.error(err);
     }
   };
@@ -32,14 +34,15 @@ const WebAuthnButton = () => {
           borderRadius: '8px',
           padding: '12px',
           textAlign: 'center',
-          cursor: 'pointer',
+          cursor: disabled ? 'not-allowed' : 'pointer',
           background: '#f9f9f9',
           marginTop: 10,
           marginBottom: 10,
           fontWeight: 600,
           fontSize: 16,
+          opacity: disabled ? 0.6 : 1,
         }}
-        onClick={handleWebAuthn}
+        onClick={disabled ? undefined : handleWebAuthn}
       >
         <span>🔒 Authenticate with Fingerprint / Face / PIN</span>
       </div>

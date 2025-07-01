@@ -9,6 +9,7 @@ import {
 } from "../services/fuelConsumptionService.js";
 import { getUserByEmployeeNumber } from "../services/authService.js";
 import { useUserStore } from "../store/userStore.js";
+import WebAuthnButton from "./WebAuthnButton.jsx";
 
 function FuelUsageDriverForm({ onSuccess }) {
   const { user, profile } = useUserStore();
@@ -584,11 +585,32 @@ function FuelUsageDriverForm({ onSuccess }) {
           )}
         </div>
       <div className="form-group" style={{ marginBottom: '20px' }}>
-        <label className="form-label">Operator Signature/Fingerprint</label>
-        <SignaturePad />
+        <label className="form-label">Operator Fingerprint (Windows Hello)</label>
+        <WebAuthnButton
+          onSuccess={() => {
+            setSignatureCaptured(true);
+            setSignatureData('authenticated');
+          }}
+          onError={(err) => {
+            setSignatureCaptured(false);
+            setSignatureData('');
+            alert('Authentication failed: ' + (err?.message || err));
+          }}
+          disabled={isLoading}
+        />
+        {!signatureCaptured && (
+          <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
+            Please authenticate with fingerprint before saving.
+          </div>
+        )}
+        {signatureCaptured && (
+          <div style={{ color: '#25b86f', fontSize: '12px', marginTop: '4px' }}>
+            Fingerprint authentication successful.
+          </div>
+        )}
       </div>
       <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-        <button type="submit" className="btn btn-primary" disabled={isLoading}>
+        <button type="submit" className="btn btn-primary" disabled={isLoading || !signatureCaptured}>
           {isLoading ? (
             <>
               <div style={{
