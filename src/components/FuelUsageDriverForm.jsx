@@ -1,4 +1,9 @@
-import React, { useState, useEffect } from "react";
+/*
+  Camera modal overlay fix:
+  Ensures modal always overlays the entire browser viewport by using a portal to document.body.
+*/
+import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import Select from 'react-select';
 import {
   createDieselConsumption,
@@ -33,6 +38,7 @@ function FuelUsageDriverForm({ onSuccess }) {
     operatorName: '',
     operatorMobile: '',
     employeeNumber: '',
+    qatarIdNumber: '',
     division: user?.tanks?.[0]?.tank_name || '',
     quantity: '',
     perhour: '',
@@ -82,6 +88,70 @@ function FuelUsageDriverForm({ onSuccess }) {
       setAuthenticating(false);
     }
   };
+// Camera modal state and handlers
+const [showCamera, setShowCamera] = useState(false);
+const [cameraError, setCameraError] = useState('');
+const videoRef = useRef(null);
+const canvasRef = useRef(null);
+const [facingMode, setFacingMode] = useState("environment");
+
+// Flip camera
+function flipCamera() {
+  const newMode = facingMode === "environment" ? "user" : "environment";
+  setFacingMode(newMode);
+  if (showCamera) {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: newMode } })
+      .then(stream => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      })
+      .catch(() => setCameraError('Unable to access camera'));
+  }
+}
+
+// Open camera and stream video
+function openCamera() {
+  setCameraError('');
+  setShowCamera(true);
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => {
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    })
+    .catch(() => setCameraError('Unable to access camera'));
+}
+
+// Capture photo from video
+function capturePhoto() {
+  if (videoRef.current && canvasRef.current) {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(blob => {
+      if (blob) {
+        const file = new File([blob], "perhour.jpg", { type: "image/jpeg" });
+        setFormValues(prev => ({ ...prev, perhour: file }));
+      }
+    }, "image/jpeg");
+    // Stop camera stream
+    if (video.srcObject) {
+      video.srcObject.getTracks().forEach(track => track.stop());
+    }
+    setShowCamera(false);
+  }
+}
+
+// Close camera and stop stream
+function closeCamera() {
+  setShowCamera(false);
+  if (videoRef.current && videoRef.current.srcObject) {
+    videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+  }
+}
 
   // Load form data on mount
   useEffect(() => {
@@ -174,6 +244,27 @@ function FuelUsageDriverForm({ onSuccess }) {
       }));
     }
     if (value !== formValues.employeeNumber) {
+      setFormValues(prev => ({
+        ...prev,
+        operatorName: '',
+        operatorMobile: ''
+      }));
+    }
+  };
+
+  const handleQatarIdNumberChange = (e) => {
+    const { value } = e.target;
+    setFormValues(prev => ({
+      ...prev,
+      qatarIdNumber: value
+    }));
+    if (formErrors.qatarIdNumber) {
+      setFormErrors(prev => ({
+        ...prev,
+        qatarIdNumber: ''
+      }));
+    }
+    if (value !== formValues.qatarIdNumber) {
       setFormValues(prev => ({
         ...prev,
         operatorName: '',
@@ -400,11 +491,12 @@ function FuelUsageDriverForm({ onSuccess }) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <React.Fragment>
+      <form onSubmit={handleSubmit}>
       <div className="form-grid">
         {/* Plate Number */}
         <div className="form-group">
-          <label className="form-label">Machine ID</label>
+          <label className="form-label">Plate Number / Machine ID</label>
           <input
             type="text"
             className="form-input"
@@ -423,7 +515,7 @@ function FuelUsageDriverForm({ onSuccess }) {
         </div>
         {/* Vehicle/Equipment Type */}
         <div className="form-group">
-          <label className="form-label">Machine Type</label>
+          <label className="form-label">Vehicle / Equipment Type</label>
           <input
             type="text"
             className="form-input"
@@ -464,12 +556,12 @@ function FuelUsageDriverForm({ onSuccess }) {
               <label className="form-label">Rented Vehicle</label>
               <select
             className="form-input"
-            value={isRented ? 'yes' : 'no'}
-            onChange={(e) => setIsRented(e.target.value === 'yes')}
+            value={isRented}
+            onChange={(e) => setIsRented(e.target.value === 'true')}
             disabled={isLoading}
           >
-            <option value="no">No</option>
-            <option value="yes">Yes</option>
+            <option value="false">No</option>
+            <option value="true">Yes</option>
           </select>
           </div>
           {/* Division */}
@@ -496,21 +588,52 @@ function FuelUsageDriverForm({ onSuccess }) {
           </div>
         </div>
         {/* Employee Number */}
-        <div className="form-group">
-          <label className="form-label">Employee Number</label>
-          <input
-            type="text"
+        <div className="form-group" style={{flexDirection: 'row', gap: '10px', alignItems: 'center'}}>
+         { isRented === false ? <div className="form-group">
+            <label className="form-label">Qatar ID Number</label>
+            <input
+              type="text"
+              className="form-input"
+              name="qatarIdNumber"
+              value={formValues.qatarIdNumber}
+              onChange={handleQatarIdNumberChange}
+              disabled={isLoading}
+              placeholder="Enter Qatar ID number"
+              required
+            />
+            {submitted && formErrors.qatarIdNumber && (
+              <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.qatarIdNumber}</div>
+            )}
+          </div> :
+          <div className="form-group">
+            <label className="form-label">Employee Number</label>
+            <input
+              type="text"
+              className="form-input"
+              name="employeeNumber"
+              value={formValues.employeeNumber}
+              onChange={handleEmployeeNumberChange}
+              disabled={isLoading}
+              placeholder="Enter employee number"
+              required
+            />
+            {submitted && formErrors.employeeNumber && (
+              <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.employeeNumber}</div>
+            )}
+          </div>}
+          <div className="form-group">
+              <label className="form-label" style={{ whiteSpace: 'nowrap', marginLeft: -10 }}>Rented Vehicle</label>
+              <select
             className="form-input"
-            name="employeeNumber"
-            value={formValues.employeeNumber}
-            onChange={handleEmployeeNumberChange}
+            value={isRented}
+            onChange={(e) => setIsRented(e.target.value === 'true')}
             disabled={isLoading}
-            placeholder="Enter employee number"
-            required
-          />
-          {submitted && formErrors.employeeNumber && (
-            <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.employeeNumber}</div>
-          )}
+          >
+            <option value="false">No</option>
+            <option value="true">Yes</option>
+          </select>
+          </div>
+
         </div>
         {/* Driver Name */}
         <div className="form-group">
@@ -532,7 +655,7 @@ function FuelUsageDriverForm({ onSuccess }) {
         </div>
         {/* Operator Mobile Number */}
         <div className="form-group">
-          <label className="form-label">Operator Mobile Number</label>
+          <label className="form-label">Mobile Number</label>
           <input
             type="tel"
             className="form-input"
@@ -574,15 +697,60 @@ function FuelUsageDriverForm({ onSuccess }) {
           <label className="form-label">
             Per Hour &nbsp; (prev hour: 123)
           </label>
-          <input
-            type="file"
-            accept="image/*"
+          <div
             className="form-input"
-            name="perhour"
-            onChange={e => setFormValues(prev => ({ ...prev, perhour: e.target.files[0] }))}
-            disabled={isLoading}
-            required
-          />
+            style={{ cursor: 'pointer', padding: 12, border: '1px solid #ccc', borderRadius: 4, textAlign: 'center' }}
+            onClick={openCamera}
+          >
+            {formValues.perhour
+              ? <span style={{ color: '#23476a' }}>{formValues.perhour.name || 'Photo captured'}</span>
+              : <span style={{ color: '#015998' }}>Tap to open camera</span>
+            }
+          </div>
+          {showCamera &&
+            ReactDOM.createPortal(
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                background: 'rgba(0,0,0,0.7)',
+                zIndex: 2147483647,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <div style={{
+                  background: '#fff',
+                  padding: 20,
+                  borderRadius: 8,
+                  textAlign: 'center',
+                  boxShadow: '0 4px 32px rgba(0,0,0,0.25)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <video ref={videoRef} autoPlay playsInline style={{ width: 320, height: 240, borderRadius: 8, background: '#000' }} />
+                  <canvas ref={canvasRef} style={{ display: 'none' }} />
+                  <div style={{ marginTop: 10, display: 'flex', gap: 10, justifyContent: 'center' }}>
+                    <button type="button" className="btn btn-primary" onClick={capturePhoto}>Capture</button>
+                    <button type="button" className="btn btn-secondary" onClick={closeCamera}>Cancel</button>
+                    <button type="button" className="btn btn-secondary" onClick={flipCamera}>Flip Camera</button>
+                  </div>
+                  {cameraError && <div style={{ color: 'red', marginTop: 8 }}>{cameraError}</div>}
+                </div>
+              </div>,
+              document.body
+            )
+          }
+          <div style={{ marginTop: 8, color: '#015998', fontWeight: 600 }}>
+            Extracted Reading: <span style={{ color: '#23476a' }}>[To be extracted]</span>
+          </div>
+          <div style={{ color: '#666', fontSize: 13, marginTop: 4 }}>
+            Previous: 123
+          </div>
         </div>
         {/* Job Number */}
           <div className="form-group">
@@ -711,6 +879,7 @@ function FuelUsageDriverForm({ onSuccess }) {
         </div>
       )}
     </form>
+    </React.Fragment>
   );
 }
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 import Select from 'react-select';
 import {
   createDieselConsumption,
@@ -445,7 +446,8 @@ const closeCamera = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <React.Fragment>
+      <form onSubmit={handleSubmit}>
       <div className="form-grid">
         {/* Plate Number */}
         <div className="form-group">
@@ -577,7 +579,7 @@ const closeCamera = () => {
         </div>
         {/* Operator Mobile Number */}
         <div className="form-group">
-          <label className="form-label">Operator Mobile Number</label>
+          <label className="form-label">Mobile Number</label>
           <input
             type="tel"
             className="form-input"
@@ -629,33 +631,44 @@ const closeCamera = () => {
               : <span style={{ color: '#015998' }}>Tap to open camera</span>
             }
           </div>
-          {showCamera && (
-            <div style={{
-              position: 'fixed', top: 0, left: 0, width: window.innerWidth, height: window.innerHeight,
-              background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
+          {showCamera &&
+            ReactDOM.createPortal(
               <div style={{
-                background: '#fff',
-                padding: 20,
-                borderRadius: 8,
-                textAlign: 'center',
-                boxShadow: '0 4px 32px rgba(0,0,0,0.25)',
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                background: 'rgba(0,0,0,0.7)',
+                zIndex: 2147483647,
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <video ref={videoRef} autoPlay playsInline style={{ width: 320, height: 240, borderRadius: 8, background: '#000' }} />
-                <canvas ref={canvasRef} style={{ display: 'none' }} />
-                <div style={{ marginTop: 10, display: 'flex', gap: 10, justifyContent: 'center' }}>
-                  <button type="button" className="btn btn-primary" onClick={capturePhoto}>Capture</button>
-                  <button type="button" className="btn btn-secondary" onClick={closeCamera}>Cancel</button>
-                  <button type="button" className="btn btn-secondary" onClick={flipCamera}>Flip Camera</button>
+                <div style={{
+                  background: '#fff',
+                  padding: 20,
+                  borderRadius: 8,
+                  textAlign: 'center',
+                  boxShadow: '0 4px 32px rgba(0,0,0,0.25)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <video ref={videoRef} autoPlay playsInline style={{ width: 320, height: 240, borderRadius: 8, background: '#000' }} />
+                  <canvas ref={canvasRef} style={{ display: 'none' }} />
+                  <div style={{ marginTop: 10, display: 'flex', gap: 10, justifyContent: 'center' }}>
+                    <button type="button" className="btn btn-primary" onClick={capturePhoto}>Capture</button>
+                    <button type="button" className="btn btn-secondary" onClick={closeCamera}>Cancel</button>
+                    <button type="button" className="btn btn-secondary" onClick={flipCamera}>Flip Camera</button>
+                  </div>
+                  {cameraError && <div style={{ color: 'red', marginTop: 8 }}>{cameraError}</div>}
                 </div>
-                {cameraError && <div style={{ color: 'red', marginTop: 8 }}>{cameraError}</div>}
-              </div>
-            </div>
-          )}
+              </div>,
+              document.body
+            )
+          }
           <div style={{ marginTop: 8, color: '#015998', fontWeight: 600 }}>
             Extracted Reading: <span style={{ color: '#23476a' }}>[To be extracted]</span>
           </div>
@@ -767,6 +780,7 @@ const closeCamera = () => {
         </div>
       )}
     </form>
+    </React.Fragment>
   );
 }
 

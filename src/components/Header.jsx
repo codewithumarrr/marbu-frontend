@@ -86,7 +86,7 @@ const Header = () => {
           <div className="user-badge" onClick={handleProfileClick} style={{ cursor: 'pointer' }}>
             <div className="user-img">
               <img
-                src={profile?.user_picture || userPlaceholder}
+                src={profile?.user_picture ?? userPlaceholder}
                 alt="User"
                 onError={e => { e.target.onerror = null; e.target.src = userPlaceholder; }}
               />
