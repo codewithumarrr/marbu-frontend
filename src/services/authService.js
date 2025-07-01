@@ -193,3 +193,37 @@ export async function getUserByEmployeeNumber(employeeNumber) {
     throw error;
   }
 }
+
+// Generate authentication options
+export async function generateAuthenticationOptions() {
+  const { setError, getToken } = useUserStore.getState();
+  try {
+    const token = getToken();
+    const response = await api.get('/auth/generate-authentication-options', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    setError(error.response?.data?.message || error.message);
+    throw error;
+  }
+}
+
+// Verify authentication response
+export async function verifyAuthenticationResponse(data) {
+  const { setError, getToken } = useUserStore.getState();
+  try {
+    const token = getToken();
+    const response = await api.post('/auth/verify-authentication-response', data, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    setError(error.response?.data?.message || error.message);
+    throw error;
+  }
+}

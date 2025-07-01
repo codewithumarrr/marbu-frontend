@@ -9,7 +9,8 @@ import {
 } from "../services/fuelConsumptionService.js";
 import { getUserByEmployeeNumber } from "../services/authService.js";
 import { useUserStore } from "../store/userStore.js";
-import WebAuthnButton from "./WebAuthnButton.jsx";
+import { startAuthentication } from '@simplewebauthn/browser';
+import { generateAuthenticationOptions, verifyAuthenticationResponse } from "../services/authService.js";
 
 function FuelUsageDriverForm({ onSuccess }) {
   const { user, profile } = useUserStore();
@@ -23,6 +24,7 @@ function FuelUsageDriverForm({ onSuccess }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [authenticating, setAuthenticating] = useState(false);
   const [formValues, setFormValues] = useState({
     vehicleEquipmentType: '',
     plateNumberMachineId: '',
@@ -44,6 +46,42 @@ function FuelUsageDriverForm({ onSuccess }) {
   const [signatureCaptured, setSignatureCaptured] = useState(false);
   const [signatureData, setSignatureData] = useState('');
   const [otherLocation, setOtherLocation] = useState('');
+
+  const handleWebAuthn = async () => {
+    setAuthenticating(true);
+    setError('');
+    try {
+      const authOptions = await generateAuthenticationOptions();
+      if (authOptions.status === 'success') {
+        const options = authOptions.data.options;
+
+        // Convert challenge to Uint8Array
+        options.challenge = Uint8Array.from(atob(options.challenge), c => c.charCodeAt(0));
+
+        const credential = await startAuthentication(options);
+
+        const verificationResult = await verifyAuthenticationResponse(credential);
+        if (verificationResult.status === 'success' && verificationResult.data.verification.verified) {
+          setSignatureCaptured(true);
+          setSignatureData('authenticated');
+        } else {
+          setSignatureCaptured(false);
+          setSignatureData('');
+          setError('Authentication failed: Verification failed.');
+        }
+      } else {
+        setSignatureCaptured(false);
+        setSignatureData('');
+        setError('Authentication failed: Could not generate authentication options.');
+      }
+    } catch (err) {
+      setSignatureCaptured(false);
+      setSignatureData('');
+      setError('Authentication failed: ' + (err?.message || err));
+    } finally {
+      setAuthenticating(false);
+    }
+  };
 
   // Load form data on mount
   useEffect(() => {
@@ -322,43 +360,43 @@ function FuelUsageDriverForm({ onSuccess }) {
       boxShadow: state.isFocused ? '0 0 0 3px rgba(8, 145, 178, 0.1)' : 'none',
       fontSize: '16px',
       paddingLeft: '0',
-      background: 'white',
+      background: 'white'
     }),
     valueContainer: (provided) => ({
       ...provided,
-      padding: '0 16px',
+      padding: '0 16px'
     }),
     input: (provided) => ({
       ...provided,
       margin: '0',
-      padding: '0',
+      padding: '0'
     }),
     multiValue: (provided) => ({
       ...provided,
       background: '#e2e8f0',
       borderRadius: '6px',
       padding: '2px 6px',
-      fontSize: '15px',
+      fontSize: '15px'
     }),
     multiValueLabel: (provided) => ({
       ...provided,
       color: '#015998',
-      fontWeight: 500,
+      fontWeight: 500
     }),
     multiValueRemove: (provided) => ({
       ...provided,
       color: '#dc2626',
-      ':hover': { background: '#fee2e2', color: '#b91c1c' },
+      ':hover': { background: '#fee2e2', color: '#b91c1c' }
     }),
     placeholder: (provided) => ({
       ...provided,
       color: '#a0aec0',
-      fontSize: '16px',
+      fontSize: '16px'
     }),
     menu: (provided) => ({
       ...provided,
-      zIndex: 10,
-    }),
+      zIndex: 10
+    })
   };
 
   return (
@@ -425,36 +463,36 @@ function FuelUsageDriverForm({ onSuccess }) {
           <div className="form-group">
               <label className="form-label">Rented Vehicle</label>
               <select
-                className="form-input"
-                value={isRented ? 'yes' : 'no'}
-                onChange={(e) => setIsRented(e.target.value === 'yes')}
-                disabled={isLoading}
-              >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
+            className="form-input"
+            value={isRented ? 'yes' : 'no'}
+            onChange={(e) => setIsRented(e.target.value === 'yes')}
+            disabled={isLoading}
+          >
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
           </div>
           {/* Division */}
-          <div className="form-group" >
+          <div className="form-group">
               <label className="form-label">Division</label>
               <select
-                className="form-input"
-                name="division"
-                value={formValues.division}
-                onChange={handleInputChange}
-                readOnly={true}
-                disabled={isLoading}
-                required
-              >
-                <option value="">Select Division</option>
-                <option value="division1">Division 1</option>
-                <option value="division2">Division 2</option>
-              </select>
-              {submitted && formErrors.division && (
-                <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
-                  {formErrors.division}
-                </div>
-              )}
+            className="form-input"
+            name="division"
+            value={formValues.division}
+            onChange={handleInputChange}
+            readOnly={true}
+            disabled={isLoading}
+            required
+          >
+            <option value="">Select Division</option>
+            <option value="division1">Division 1</option>
+            <option value="division2">Division 2</option>
+          </select>
+          {submitted && formErrors.division && (
+            <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
+              {formErrors.division}
+            </div>
+          )}
           </div>
         </div>
         {/* Employee Number */}
@@ -584,33 +622,35 @@ function FuelUsageDriverForm({ onSuccess }) {
             </div>
           )}
         </div>
-      <div className="form-group" style={{ marginBottom: '20px' }}>
-        <label className="form-label">Operator Fingerprint (Windows Hello)</label>
-        <WebAuthnButton
-          onSuccess={() => {
-            setSignatureCaptured(true);
-            setSignatureData('authenticated');
-          }}
-          onError={(err) => {
-            setSignatureCaptured(false);
-            setSignatureData('');
-            alert('Authentication failed: ' + (err?.message || err));
-          }}
-          disabled={isLoading}
-        />
-        {!signatureCaptured && (
-          <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
-            Please authenticate with fingerprint before saving.
+        <div className="form-group" style={{ marginBottom: '20px' }}>
+          <label className="form-label">Operator Fingerprint (Windows Hello)</label>
+          <div
+            className="thumbprint-pad"
+            style={{
+              cursor: (isLoading || authenticating) ? 'not-allowed' : 'pointer',
+              border: '2px dashed #ccc',
+              borderRadius: '10px',
+              padding: '20px',
+              textAlign: 'center'
+            }}
+            onClick={handleWebAuthn}
+            disabled={isLoading || authenticating}
+          >
+            {authenticating ? 'Authenticating...' : 'Place Thumb Here'}
           </div>
-        )}
-        {signatureCaptured && (
-          <div style={{ color: '#25b86f', fontSize: '12px', marginTop: '4px' }}>
-            Fingerprint authentication successful.
-          </div>
-        )}
-      </div>
-      <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-        <button type="submit" className="btn btn-primary" disabled={isLoading || !signatureCaptured}>
+          {!signatureCaptured && (
+            <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
+              Please authenticate with fingerprint before saving.
+            </div>
+          )}
+          {signatureCaptured && (
+            <div style={{ color: '#25b86f', fontSize: '12px', marginTop: '4px' }}>
+              Fingerprint authentication successful.
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+          <button type="submit" className="btn btn-primary" disabled={isLoading || !signatureCaptured}>
           {isLoading ? (
             <>
               <div style={{
