@@ -1,4 +1,7 @@
 import React, { useRef } from "react";
+import html2pdf from 'html2pdf.js';
+import ExcelJS from 'exceljs';
+import html2canvas from 'html2canvas';
 
 const ReportPreview = ({
   logoUrl = "https://i.ibb.co/YFHXfVz4/logo.png",
@@ -20,11 +23,47 @@ const ReportPreview = ({
 }) => {
   const printRef = useRef();
   const handlePrint = () => window.print();
+  const handlePDF = () => {
+    if (printRef.current) {
+      html2pdf().from(printRef.current).set({
+        margin: 0,
+        filename: 'report.pdf',
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      }).save();
+    }
+  };
+  const handleExcel = async () => {
+    if (!printRef.current) return;
+    // Capture the report as an image
+    const canvas = await html2canvas(printRef.current, { useCORS: true, scale: 2 });
+    const dataUrl = canvas.toDataURL('image/png');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Report');
+    // Add the image to the worksheet
+    const imageId = workbook.addImage({ base64: dataUrl, extension: 'png' });
+    worksheet.addImage(imageId, {
+      tl: { col: 0, row: 0 },
+      ext: { width: canvas.width / 2, height: canvas.height / 2 },
+    });
+    // Download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'report.xlsx');
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode.removeChild(link);
+  };
 
   return (
     <div style={{ position: 'relative' }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 16 }}>
         <button className="btn btn-primary" onClick={handlePrint}>Print</button>
+        <button className="btn btn-secondary" onClick={handlePDF}>Export PDF</button>
+        <button className="btn btn-success" onClick={handleExcel}>Export Excel</button>
       </div>
       <div className="invoice-container" ref={printRef}>
         <header className="invoice-header">
@@ -49,13 +88,12 @@ const ReportPreview = ({
               <tr>
                 <th>S.N</th>
                 <th>PLATE NO</th>
-                <th>EQUIPMENT</th>
                 <th>DATE</th>
+                <th>EQUIPMENT</th>
                 <th>JOB NO</th>
                 <th>LTRS</th>
                 <th>EQUIPMENT HRS/KM</th>
-                <th>DRIVER NAME</th>
-                <th>SIGNATURE</th>
+                <th>DRIVER</th>
               </tr>
             </thead>
             <tbody>
@@ -63,13 +101,12 @@ const ReportPreview = ({
                 <tr key={idx}>
                   <td>{item.sn}</td>
                   <td>{item.plateNo}</td>
-                  <td>{item.equipment}</td>
                   <td>{item.date}</td>
+                  <td>{item.equipment}</td>
                   <td>{item.jobNo}</td>
                   <td>{item.ltrs}</td>
                   <td>{item.hours}</td>
                   <td>{item.driver}</td>
-                  <td>{item.signature}</td>
                 </tr>
               ))}
             </tbody>

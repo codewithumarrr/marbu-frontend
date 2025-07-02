@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import html2pdf from 'html2pdf.js';
 
 // Helper for PDF export (to be implemented later)
 // import html2pdf from 'html2pdf.js';
@@ -32,7 +33,14 @@ const InvoicePreview = ({
 
   // Placeholder for PDF export
   const handlePDF = () => {
-    alert("PDF export coming soon!");
+    if (printRef.current) {
+      html2pdf().from(printRef.current).set({
+        margin: 0,
+        filename: 'invoice.pdf',
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      }).save();
+    }
   };
 
   // Calculate subtotal
