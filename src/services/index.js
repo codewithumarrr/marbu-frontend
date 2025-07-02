@@ -15,6 +15,7 @@ export * from './invoicesService.js';
 export * from './reportsService.js';
 export * from './auditTrailService.js';
 export * from './divisionsService.js';
+export * from './suppliersService.js';
 
 // Utility functions (if needed)
 export const initializeServices = () => {

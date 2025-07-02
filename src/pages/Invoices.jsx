@@ -14,6 +14,8 @@ import {
   generateInvoiceFromConsumption
 } from "../services/invoicesService.js";
 import { getAllDivisions } from "../services/divisionsService.js";
+import { getAllEmployees } from "../services/employeesService.js";
+import { getAllSuppliers } from "../services/suppliersService.js";
 import { useNavigate } from 'react-router-dom';
 
 function Invoices() {
@@ -32,12 +34,16 @@ function Invoices() {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [divisions, setDivisions] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [sites, setSites] = useState([]);
+  const [users, setUsers] = useState([]);
   const [form, setForm] = useState({
-    supplier: '',
-    date: '',
-    dueDate: '',
-    amount: '',
-    status: 'Pending',
+    site_id: '',
+    invoice_date: '',
+    start_date: '',
+    end_date: '',
+    total_amount: '',
+    generated_by_user_id: '',
   });
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
@@ -46,8 +52,34 @@ function Invoices() {
   useEffect(() => {
     loadInvoices();
     loadDivisions();
+    loadSites();
+    loadUsers();
     // eslint-disable-next-line
   }, []);
+
+  const loadSuppliers = async () => {
+    try {
+      const res = await getAllSuppliers();
+      setSuppliers(res || []);
+    } catch (err) {}
+  };
+
+  // Use service for sites
+  const loadSites = async () => {
+    try {
+      const { getReportSites } = await import("../services/reportsService.js");
+      const sitesRes = await getReportSites();
+      setSites(sitesRes?.data || []);
+    } catch (err) {}
+  };
+
+  // Use getAllEmployees service for employees
+  const loadUsers = async () => {
+    try {
+      const res = await getAllEmployees();
+      setUsers(res?.data || []);
+    } catch (err) {}
+  };
 
   const loadDivisions = async () => {
     try {
@@ -105,7 +137,16 @@ function Invoices() {
     setLoading(true);
     setApiError('');
     try {
-      await createInvoice(form);
+      // Prepare payload for backend with correct field names
+      const payload = {
+        site_id: parseInt(form.site_id),
+        invoice_date: form.invoice_date,
+        start_date: form.start_date,
+        end_date: form.end_date,
+        total_amount: parseFloat(form.total_amount),
+        generated_by_user_id: form.generated_by_user_id
+      };
+      await createInvoice(payload);
       closeCreateModal();
       loadInvoices();
     } catch (err) {
@@ -230,61 +271,85 @@ function Invoices() {
         title="Create New Invoice"
       >
         <form onSubmit={handleCreateSubmit}>
+          {/* Supplier field removed, as supplier_id is not a direct field on invoice */}
           <div className="form-group">
-            <label className="form-label">Supplier</label>
-            <input
-              type="text"
-              className="form-input"
-              name="supplier"
-              value={form.supplier}
-              onChange={handleFormChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Date</label>
-            <input
-              type="date"
-              className="form-input"
-              name="date"
-              value={form.date}
-              onChange={handleFormChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Due Date</label>
-            <input
-              type="date"
-              className="form-input"
-              name="dueDate"
-              value={form.dueDate}
-              onChange={handleFormChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Amount</label>
-            <input
-              type="text"
-              className="form-input"
-              name="amount"
-              value={form.amount}
-              onChange={handleFormChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Status</label>
+            <label className="form-label">Site</label>
             <select
               className="form-select"
-              name="status"
-              value={form.status}
+              name="site_id"
+              value={form.site_id}
               onChange={handleFormChange}
               required
             >
-              <option value="Pending">Pending</option>
-              <option value="Paid">Paid</option>
+              <option value="">Select Site</option>
+              {sites.map(site => (
+                <option key={site.site_id} value={site.site_id}>
+                  {site.site_name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Invoice Date</label>
+            <input
+              type="date"
+              className="form-input"
+              name="invoice_date"
+              value={form.invoice_date}
+              onChange={handleFormChange}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Start Date</label>
+            <input
+              type="date"
+              className="form-input"
+              name="start_date"
+              value={form.start_date}
+              onChange={handleFormChange}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">End Date</label>
+            <input
+              type="date"
+              className="form-input"
+              name="end_date"
+              value={form.end_date}
+              onChange={handleFormChange}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Total Amount</label>
+            <input
+              type="number"
+              className="form-input"
+              name="total_amount"
+              value={form.total_amount}
+              onChange={handleFormChange}
+              required
+              min="0"
+              step="0.01"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Generated By</label>
+            <select
+              className="form-select"
+              name="generated_by_user_id"
+              value={form.generated_by_user_id}
+              onChange={handleFormChange}
+              required
+            >
+              <option value="">Select User</option>
+              {users.map(user => (
+                <option key={user.employee_number} value={user.employee_number}>
+                  {user.employee_name} ({user.employee_number})
+                </option>
+              ))}
             </select>
           </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
