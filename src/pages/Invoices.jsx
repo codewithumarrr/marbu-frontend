@@ -13,6 +13,7 @@ import {
   deleteInvoice,
   generateInvoiceFromConsumption
 } from "../services/invoicesService.js";
+import { getAllDivisions } from "../services/divisionsService.js";
 import { useNavigate } from 'react-router-dom';
 
 function Invoices() {
@@ -30,6 +31,7 @@ function Invoices() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [divisions, setDivisions] = useState([]);
   const [form, setForm] = useState({
     supplier: '',
     date: '',
@@ -43,66 +45,35 @@ function Invoices() {
 
   useEffect(() => {
     loadInvoices();
+    loadDivisions();
     // eslint-disable-next-line
   }, []);
+
+  const loadDivisions = async () => {
+    try {
+      const res = await getAllDivisions();
+      setDivisions(res?.data || []);
+    } catch (err) {
+      // Optionally handle error
+    }
+  };
 
   const loadInvoices = async (filters = {}) => {
     setLoading(true);
     setApiError('');
     try {
-      // Dummy data for UI testing
-      const dummyData = [
-        { id: 'INV-001', invoiceNo: 'INV-001', supplier: 'division-a', date: '2025-05-10', dueDate: '2025-06-10', amount: '10,000.00', status: 'Pending', items: [
-          { description: 'MRJ-158', qty: '1000', unitPrice: '5.00', amount: '5,000.00' },
-          { description: 'MRJ-159', qty: '500', unitPrice: '10.00', amount: '5,000.00' },
-        ] },
-        { id: 'INV-002', invoiceNo: 'INV-002', supplier: 'division-a', date: '2025-05-11', dueDate: '2025-06-11', amount: '11,000.00', status: 'Paid', items: [
-          { description: 'MRJ-160', qty: '1100', unitPrice: '10.00', amount: '11,000.00' },
-        ] },
-        { id: 'INV-003', invoiceNo: 'INV-003', supplier: 'division-a', date: '2025-05-12', dueDate: '2025-06-12', amount: '12,000.00', status: 'Pending', items: [
-          { description: 'MRJ-161', qty: '600', unitPrice: '10.00', amount: '6,000.00' },
-          { description: 'MRJ-162', qty: '600', unitPrice: '10.00', amount: '6,000.00' },
-        ] },
-        { id: 'INV-004', invoiceNo: 'INV-004', supplier: 'division-a', date: '2025-05-13', dueDate: '2025-06-13', amount: '13,000.00', status: 'Paid', items: [
-          { description: 'MRJ-163', qty: '1300', unitPrice: '10.00', amount: '13,000.00' },
-        ] },
-        { id: 'INV-005', invoiceNo: 'INV-005', supplier: 'division-a', date: '2025-05-14', dueDate: '2025-06-14', amount: '14,000.00', status: 'Pending', items: [
-          { description: 'MRJ-164', qty: '700', unitPrice: '10.00', amount: '7,000.00' },
-          { description: 'MRJ-165', qty: '700', unitPrice: '10.00', amount: '7,000.00' },
-        ] },
-        { id: 'INV-006', invoiceNo: 'INV-006', supplier: 'division-a', date: '2025-05-15', dueDate: '2025-06-15', amount: '15,000.00', status: 'Paid', items: [
-          { description: 'MRJ-166', qty: '1500', unitPrice: '10.00', amount: '15,000.00' },
-        ] },
-        { id: 'INV-007', invoiceNo: 'INV-007', supplier: 'division-a', date: '2025-05-16', dueDate: '2025-06-16', amount: '16,000.00', status: 'Pending', items: [
-          { description: 'MRJ-167', qty: '800', unitPrice: '10.00', amount: '8,000.00' },
-          { description: 'MRJ-168', qty: '800', unitPrice: '10.00', amount: '8,000.00' },
-        ] },
-        { id: 'INV-008', invoiceNo: 'INV-008', supplier: 'division-a', date: '2025-05-17', dueDate: '2025-06-17', amount: '17,000.00', status: 'Paid', items: [
-          { description: 'MRJ-169', qty: '1700', unitPrice: '10.00', amount: '17,000.00' },
-        ] },
-        // Other divisions
-        { id: 'INV-009', invoiceNo: 'INV-009', supplier: 'division-b', date: '2025-05-18', dueDate: '2025-06-18', amount: '20,000.00', status: 'Paid', items: [
-          { description: 'MRJ-170', qty: '2000', unitPrice: '10.00', amount: '20,000.00' },
-        ] },
-        { id: 'INV-010', invoiceNo: 'INV-010', supplier: 'division-c', date: '2025-05-19', dueDate: '2025-06-19', amount: '15,500.00', status: 'Pending', items: [
-          { description: 'MRJ-171', qty: '1550', unitPrice: '10.00', amount: '15,500.00' },
-        ] },
-        { id: 'INV-011', invoiceNo: 'INV-011', supplier: 'division-d', date: '2025-05-20', dueDate: '2025-06-20', amount: '18,750.00', status: 'Paid', items: [
-          { description: 'MRJ-172', qty: '1875', unitPrice: '10.00', amount: '18,750.00' },
-        ] },
-      ];
-      // Simple filter logic for demo
-      let filtered = dummyData;
-      if (filters.supplierId) {
-        filtered = filtered.filter(inv => inv.supplier === filters.supplierId);
-      }
-      if (filters.dateFrom) {
-        filtered = filtered.filter(inv => inv.date >= filters.dateFrom);
-      }
-      if (filters.dateTo) {
-        filtered = filtered.filter(inv => inv.date <= filters.dateTo);
-      }
-      setInvoiceData(filtered);
+      // Build flexible payload
+      const payload = {
+        invoiceType: filters.invoiceType,
+        supplierId: filters.supplierId,
+        dateFrom: filters.dateFrom,
+        dateTo: filters.dateTo,
+        page: filters.page || 1,
+        limit: filters.limit || 10
+      };
+      // Use backend API for filtered invoices
+      const res = await getFilteredInvoices(payload);
+      setInvoiceData(res?.data?.invoices || []);
     } catch (err) {
       setApiError('Failed to load invoices');
     } finally {
@@ -168,10 +139,12 @@ function Invoices() {
         <div className="form-group">
           <label className="form-label">Division</label>
           <select className="form-select" id="supplierId" name="supplierId">
-            <option value="division-a">Division A</option>
-            <option value="division-b">Division B</option>
-            <option value="division-c">Division C</option>
-            <option value="division-d">Division D</option>
+            <option value="">All Divisions</option>
+            {divisions.map(div => (
+              <option key={div.division_id} value={div.division_name}>
+                {div.division_name}
+              </option>
+            ))}
           </select>
         </div>
         <div className="form-group">

@@ -23,13 +23,7 @@ function Reports() {
     "Efficiency",
     "Actions",
   ];
-  const [reportData, setReportData] = useState([
-    { date: '2025-03-01', site: 'Site A', vehicle: 'Excavator (MRJ-158)', operator: 'Ali Khan', fuelUsed: '27747', efficiency: '85%' },
-    { date: '2025-03-02', site: 'Site B', vehicle: 'Bulldozer (MRJ-159)', operator: 'Sami Ullah', fuelUsed: '459', efficiency: '80%' },
-    { date: '2025-03-03', site: 'Site C', vehicle: 'Loader (MRJ-162)', operator: 'Fahad', fuelUsed: '426', efficiency: '78%' },
-    { date: '2025-03-04', site: 'Site D', vehicle: 'Crane (MRJ-163)', operator: 'Imran', fuelUsed: '500', efficiency: '90%' },
-    { date: '2025-03-05', site: 'Site E', vehicle: 'Grader (MRJ-164)', operator: 'Naveed', fuelUsed: '600', efficiency: '88%' },
-  ]);
+  const [reportData, setReportData] = useState([]);
   const [sites, setSites] = useState([]);
   const [vehicleTypes, setVehicleTypes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -38,11 +32,17 @@ function Reports() {
 
   // Default filter values
   const [defaultFilters] = useState({
-    reportType: "daily",
+    reportType: "monthly",
     dateFrom: "",
     dateTo: "",
     siteId: "",
-    vehicleType: ""
+    jobId: "",
+    vehicleType: "",
+    operator: "",
+    plateNumber: "",
+    fuelMin: "",
+    fuelMax: "",
+    efficiency: ""
   });
 
   // Ref for the filter form
@@ -78,28 +78,33 @@ function Reports() {
     }
   };
 
-  const dummyReportData = [
-    { date: '2025-03-01', site: 'Site A', vehicle: 'Excavator (MRJ-158)', operator: 'Ali Khan', fuelUsed: '27747', efficiency: '85%' },
-    { date: '2025-03-02', site: 'Site B', vehicle: 'Bulldozer (MRJ-159)', operator: 'Sami Ullah', fuelUsed: '459', efficiency: '80%' },
-    { date: '2025-03-03', site: 'Site C', vehicle: 'Loader (MRJ-162)', operator: 'Fahad', fuelUsed: '426', efficiency: '78%' },
-    { date: '2025-03-04', site: 'Site D', vehicle: 'Crane (MRJ-163)', operator: 'Imran', fuelUsed: '500', efficiency: '90%' },
-    { date: '2025-03-05', site: 'Site E', vehicle: 'Grader (MRJ-164)', operator: 'Naveed', fuelUsed: '600', efficiency: '88%' },
-  ];
+  // Removed dummyReportData
 
   const handleGenerateReport = async (e) => {
     if (e) e.preventDefault();
     setLoading(true);
     setApiError('');
-    let filters;
+    let filters = {};
     if (filterFormRef.current) {
       const form = filterFormRef.current;
-      filters = {
-        reportType: form.reportType.value,
-        dateFrom: form.dateFrom.value,
-        dateTo: form.dateTo.value,
-        siteId: form.siteId.value,
-        vehicleType: form.vehicleType.value
-      };
+      // Flexible dropdown-based payload
+      filters.reportType = form.reportType.value;
+      // Date logic: single or range
+      if (form.dateFrom.value && !form.dateTo.value) {
+        filters.dateFrom = form.dateFrom.value;
+        filters.dateTo = form.dateFrom.value;
+      } else if (!form.dateFrom.value && form.dateTo.value) {
+        filters.dateFrom = form.dateTo.value;
+        filters.dateTo = form.dateTo.value;
+      } else {
+        filters.dateFrom = form.dateFrom.value;
+        filters.dateTo = form.dateTo.value;
+      }
+      if (form.siteId.value) filters.siteId = form.siteId.value;
+      if (form.jobId && form.jobId.value) filters.jobId = form.jobId.value;
+      if (form.vehicleType.value) filters.vehicleType = form.vehicleType.value;
+      if (form.efficiency && form.efficiency.value) filters.efficiency = form.efficiency.value;
+      // Add more dropdowns here as needed (e.g., operator dropdown)
     } else {
       filters = { ...defaultFilters };
     }
@@ -107,10 +112,10 @@ function Reports() {
       const data = await generateFuelUsageReport(filters);
       setReportData((data?.data?.reportData && data.data.reportData.length > 0)
         ? data.data.reportData
-        : dummyReportData);
+        : []);
     } catch (err) {
       setApiError(err?.response?.data?.message || err.message || 'Failed to generate report');
-      setReportData(dummyReportData);
+      setReportData([]);
     } finally {
       setLoading(false);
     }
@@ -124,10 +129,10 @@ function Reports() {
       const data = await generateFuelUsageReport(defaultFilters);
       setReportData((data?.data?.reportData && data.data.reportData.length > 0)
         ? data.data.reportData
-        : dummyReportData);
+        : []);
     } catch (err) {
       setApiError(err?.response?.data?.message || err.message || 'Failed to generate report');
-      setReportData(dummyReportData);
+      setReportData([]);
     } finally {
       setLoading(false);
     }
@@ -142,15 +147,15 @@ function Reports() {
           </button>
           <ReportPreview
             month={selectedReport.date?.slice(0, 7) || 'MAR 2025'}
-            jobNumber={selectedReport.vehicle || '---'}
+            jobNumber={selectedReport.jobNumber || '---'}
             items={reportData.map((row, idx) => ({
               sn: idx + 1,
-              plateNo: row.vehicle?.match(/\(([^)]+)\)/)?.[1] || '',
+              plateNo: row.plateNumber || row.vehicle?.match(/\(([^)]+)\)/)?.[1] || '',
               equipment: row.vehicle?.split(' (')[0] || '',
               date: row.date,
-              jobNo: row.site,
+              jobNo: row.jobNumber,
               ltrs: row.fuelUsed,
-              hours: '--',
+              hours: row.odometerReading || '--',
               driver: row.operator,
               signature: '--',
             }))}
@@ -190,7 +195,7 @@ function Reports() {
             </div>
             <div className="form-group">
               <label className="form-label">Job Wise</label>
-              <select className="form-select" name="siteId" defaultValue={defaultFilters.siteId}>
+              <select className="form-select" name="jobId" defaultValue={defaultFilters.jobId}>
                 <option value="">All Jobs</option>
                 {sites.map(site => (
                   <option key={site.site_id || site.id} value={site.site_id || site.id}>{site.site_name || site.name}</option>
@@ -206,6 +211,7 @@ function Reports() {
                 ))}
               </select>
             </div>
+            {/* Remove text inputs for operator and plate number, keep dropdowns only */}
           </form>
           <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
             <button
@@ -370,6 +376,43 @@ function Reports() {
                 </td>
               </>
             )}
+            pagination={{
+              page: 1,
+              limit: 50,
+              total: reportData.length,
+              onPageChange: async (newPage) => {
+                setLoading(true);
+                let filters = {};
+                if (filterFormRef.current) {
+                  const form = filterFormRef.current;
+                  filters = {
+                    reportType: form.reportType.value,
+                    dateFrom: form.dateFrom.value,
+                    dateTo: form.dateTo.value,
+                    siteId: form.siteId.value,
+                    jobId: form.jobId ? form.jobId.value : "",
+                    vehicleType: form.vehicleType.value,
+                    operator: form.operator ? form.operator.value : "",
+                    plateNumber: form.plateNumber ? form.plateNumber.value : "",
+                    fuelMin: form.fuelMin ? form.fuelMin.value : "",
+                    fuelMax: form.fuelMax ? form.fuelMax.value : "",
+                    efficiency: form.efficiency ? form.efficiency.value : "",
+                    page: newPage
+                  };
+                }
+                try {
+                  const resp = await generateFuelUsageReport(filters);
+                  setReportData((resp?.data?.reportData && resp.data.reportData.length > 0)
+                    ? resp.data.reportData
+                    : []);
+                } catch (err) {
+                  setApiError(err?.response?.data?.message || err.message || 'Failed to generate report');
+                  setReportData([]);
+                } finally {
+                  setLoading(false);
+                }
+              }
+            }}
           />
         </>
       )}

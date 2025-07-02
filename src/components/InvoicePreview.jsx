@@ -44,7 +44,7 @@ const InvoicePreview = ({
   };
 
   // Calculate subtotal
-  const subtotal = items.reduce((sum, item) => sum + parseFloat(item.amount.replace(/,/g, '')), 0).toFixed(2);
+  const subtotal = items.reduce((sum, item) => sum + parseFloat(item.amount?.toString().replace(/,/g, '')), 0).toFixed(2);
 
   return (
     <div style={{ position: 'relative' }}>

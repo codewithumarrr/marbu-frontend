@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { getAllRoles, register, getAllUsers, updateUser, deleteUser, getUserByEmployeeNumber } from '../services/authService.js';
 import { getReportSites } from '../services/reportsService.js';
 import { FaEdit, FaTrash, FaIdBadge } from 'react-icons/fa';
@@ -30,6 +31,8 @@ const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [editUserId, setEditUserId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -201,16 +204,33 @@ const UserManagement = () => {
     if (fileInput) fileInput.value = '';
   };
 
-  const handleDelete = async (user) => {
-    if (window.confirm(`Are you sure you want to delete user ${user.employee_name}?`)) {
-      try {
-        await deleteUser(user.employee_id);
-        setShowDeleteModal(true);
-        await loadUsers(); // Reload users list
-      } catch (err) {
-        setApiError(err?.response?.data?.message || err.message || 'Error deleting user');
-      }
+  // Show custom confirm modal
+  const handleDelete = (user) => {
+    setUserToDelete(user);
+    setShowDeleteConfirmModal(true);
+  };
+
+  // Confirm delete action
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    try {
+      const id = userToDelete.user_id || userToDelete.employee_number || userToDelete.employee_id;
+      await deleteUser(id);
+      setShowDeleteModal(true);
+      setShowDeleteConfirmModal(false);
+      setUserToDelete(null);
+      await loadUsers(); // Reload users list
+    } catch (err) {
+      setApiError(err?.response?.data?.message || err.message || 'Error deleting user');
+      setShowDeleteConfirmModal(false);
+      setUserToDelete(null);
     }
+  };
+
+  // Cancel delete action
+  const cancelDelete = () => {
+    setShowDeleteConfirmModal(false);
+    setUserToDelete(null);
   };
 
   return (
@@ -659,12 +679,74 @@ const UserManagement = () => {
             </div>
           </div>
         )}
+        {/* Delete Confirm Modal */}
+        {showDeleteConfirmModal && userToDelete && (
+          ReactDOM.createPortal(
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              background: 'rgba(0,0,0,0.7)',
+              zIndex: 2147483647,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <div style={{
+                background: '#fff',
+                padding: 20,
+                borderRadius: 8,
+                textAlign: 'center',
+                boxShadow: '0 4px 32px rgba(0,0,0,0.25)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: 320,
+                maxWidth: '90vw'
+              }}>
+                <div style={{ fontSize: 32, color: '#dc2626', marginBottom: 8 }}>⚠️</div>
+                <div style={{ fontWeight: 600, fontSize: 20, color: '#23476a', marginBottom: 8 }}>
+                  Are you sure you want to delete user <span style={{ color: '#dc2626' }}>{userToDelete.employee_name}</span>?
+                </div>
+                <div style={{ display: 'flex', gap: 18, marginTop: 10 }}>
+                  <button onClick={confirmDelete} style={{
+                    background: '#dc2626',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '10px 32px',
+                    fontWeight: 700,
+                    fontSize: 16,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(37,99,235,0.10)',
+                    letterSpacing: 1
+                  }}>Delete</button>
+                  <button onClick={cancelDelete} style={{
+                    background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '10px 32px',
+                    fontWeight: 700,
+                    fontSize: 16,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(37,99,235,0.10)',
+                    letterSpacing: 1
+                  }}>Cancel</button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        )}
         {/* Delete Success Modal */}
         {showDeleteModal && (
           <div style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
+            inset: 0,
             width: '100vw',
             height: '100vh',
             background: 'rgba(0,0,0,0.18)',
@@ -679,11 +761,16 @@ const UserManagement = () => {
               boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
               padding: '32px 40px',
               minWidth: 320,
+              maxWidth: '90vw',
               textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: 18
+              gap: 18,
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)'
             }}>
               <div style={{ fontSize: 32, color: '#25b86f', marginBottom: 8 }}>✅</div>
               <div style={{ fontWeight: 600, fontSize: 20, color: '#23476a' }}>User deleted successfully</div>
@@ -707,8 +794,7 @@ const UserManagement = () => {
         {showUpdateModal && (
           <div style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
+            inset: 0,
             width: '100vw',
             height: '100vh',
             background: 'rgba(0,0,0,0.18)',
@@ -723,11 +809,16 @@ const UserManagement = () => {
               boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
               padding: '32px 40px',
               minWidth: 320,
+              maxWidth: '90vw',
               textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: 18
+              gap: 18,
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)'
             }}>
               <div style={{ fontSize: 32, color: '#25b86f', marginBottom: 8 }}>✅</div>
               <div style={{ fontWeight: 600, fontSize: 20, color: '#23476a' }}>User updated successfully</div>

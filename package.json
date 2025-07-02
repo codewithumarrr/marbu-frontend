@@ -14,6 +14,7 @@
     "@simplewebauthn/browser": "^13.1.0",
     "axios": "^1.10.0",
     "exceljs": "^4.4.0",
+    "html2pdf.js": "^0.9.0",
     "jspdf": "^3.0.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
