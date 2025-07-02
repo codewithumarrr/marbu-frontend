@@ -43,7 +43,8 @@ function FuelUsageDriverForm({ onSuccess }) {
     quantity: '',
     perhour: '',
     thumbprintData: '',
-    siteId: ''
+    siteId: '',
+    machineRented: 'false'
   });
   const [formErrors, setFormErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -379,6 +380,7 @@ function closeCamera() {
     if (!formValues.jobNumber || formValues.jobNumber.length === 0) errors.jobNumber = 'At least one job number is required';
     if (!formValues.operatorName) errors.operatorName = 'Operator/Driver name is required';
     if (!formValues.operatorMobile) errors.operatorMobile = 'Operator mobile number is required';
+    else if (formValues.operatorMobile.length !== 11) errors.operatorMobile = 'Mobile number must be exactly 11 characters';
     if (!formValues.employeeNumber) errors.employeeNumber = 'Employee number is required';
     if (!formValues.division) errors.division = 'Tank source is required';
     if (!formValues.quantity || formValues.quantity <= 0) errors.quantity = 'Quantity is required and must be greater than 0';
@@ -418,7 +420,8 @@ function closeCamera() {
         quantity: '',
         perhour: '',
         thumbprintData: '',
-        siteId: ''
+        siteId: '',
+        machineRented: 'false'
       });
       setOtherLocation('');
       setSignatureCaptured(false);
@@ -550,14 +553,14 @@ function closeCamera() {
             </div>
           )}
         </div>
-        {/* Rented Vehicle */}
+        {/* Rented Vehicle (for Machine ID, does NOT affect Employee/Qatar ID logic) */}
         <div className="form-group" style={{flexDirection: 'row', gap: '10px', alignItems: 'center'}}>
           <div className="form-group">
-              <label className="form-label">Rented Vehicle</label>
+              <label className="form-label">Rented</label>
               <select
             className="form-input"
-            value={isRented}
-            onChange={(e) => setIsRented(e.target.value === 'true')}
+            value={formValues.machineRented || 'false'}
+            onChange={e => setFormValues(prev => ({ ...prev, machineRented: e.target.value }))}
             disabled={isLoading}
           >
             <option value="false">No</option>
@@ -587,9 +590,9 @@ function closeCamera() {
           )}
           </div>
         </div>
-        {/* Employee Number */}
+        {/* Employee Number / Qatar ID with Rented logic (this is the only one that controls the switch) */}
         <div className="form-group" style={{flexDirection: 'row', gap: '10px', alignItems: 'center'}}>
-         { isRented === false ? <div className="form-group">
+         { isRented === true ? <div className="form-group">
             <label className="form-label">Qatar ID Number</label>
             <input
               type="text"
@@ -622,7 +625,7 @@ function closeCamera() {
             )}
           </div>}
           <div className="form-group">
-              <label className="form-label" style={{ whiteSpace: 'nowrap', marginLeft: -10 }}>Rented Vehicle</label>
+              <label className="form-label" style={{ whiteSpace: 'nowrap', marginLeft: -10 }}>Rented</label>
               <select
             className="form-input"
             value={isRented}
@@ -666,6 +669,8 @@ function closeCamera() {
             pattern="\+974 [0-9]{4} [0-9]{4}"
             disabled={isLoading}
             required
+            minLength={11}
+            maxLength={11}
           />
           {submitted && formErrors.operatorMobile && (
             <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.operatorMobile}</div>
@@ -853,7 +858,8 @@ function closeCamera() {
               quantity: '',
               perhour: '',
               thumbprintData: '',
-              siteId: ''
+              siteId: '',
+              machineRented: 'false'
             });
             setOtherLocation('');
             setFormErrors({});

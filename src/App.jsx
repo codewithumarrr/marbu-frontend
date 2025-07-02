@@ -10,6 +10,7 @@ import Invoices from "./pages/Invoices";
 import AuditTrail from "./pages/AuditTrail";
 import Login from "./pages/Login";
 import UserManagement from "./pages/UserManagement";
+import InvoiceView from './pages/InvoiceView';
 import { isAuthenticated, initializeServices } from "./services/index.js";
 import { useUserStore } from "./store/userStore.js";
 import "./styles/App.css";
@@ -53,6 +54,7 @@ function App() {
         <Route path="/usage" element={<PrivateRoute allowedRoles={['diesel-manager', 'driver', 'site-incharge', 'admin']}><FuelUsage /></PrivateRoute>} />
         <Route path="/reports" element={<PrivateRoute allowedRoles={['diesel-manager', 'admin']}><Reports /></PrivateRoute>} />
         <Route path="/invoices" element={<PrivateRoute allowedRoles={['diesel-manager', 'admin']}><Invoices /></PrivateRoute>} />
+        <Route path="/invoice/:id" element={<InvoiceView />} />
         <Route path="/audit" element={<PrivateRoute allowedRoles={['diesel-manager', 'admin']}><AuditTrail /></PrivateRoute>} />
         <Route path="/user-management" element={<PrivateRoute allowedRoles={['admin']}><UserManagement /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/login" replace />} />

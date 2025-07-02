@@ -334,6 +334,7 @@ const closeCamera = () => {
     if (!formValues.jobNumber || formValues.jobNumber.length === 0) errors.jobNumber = 'At least one job number is required';
     if (!formValues.operatorName) errors.operatorName = 'Operator/Driver name is required';
     if (!formValues.operatorMobile) errors.operatorMobile = 'Operator mobile number is required';
+    else if (formValues.operatorMobile.length !== 11) errors.operatorMobile = 'Mobile number must be exactly 11 characters';
     if (!formValues.employeeNumber) errors.employeeNumber = 'Employee number is required';
     if (!formValues.division) errors.division = 'Tank source is required';
     if (!formValues.quantity || formValues.quantity <= 0) errors.quantity = 'Quantity is required and must be greater than 0';
@@ -508,7 +509,7 @@ const closeCamera = () => {
         {/* Rented Vehicle & Division */}
         <div className="form-group" style={{flexDirection: 'row', gap: '10px', alignItems: 'center'}}>
           <div className="form-group">
-              <label className="form-label">Rented Vehicle</label>
+              <label className="form-label">Rented</label>
               <select
                 className="form-input"
                 value={isRented ? 'yes' : 'no'}
@@ -544,7 +545,7 @@ const closeCamera = () => {
         </div>
         {/* Employee Number */}
         <div className="form-group">
-          <label className="form-label">Employee Number</label>
+          <label className="form-label">{isRented ? "Qatar ID Number" : "Employee Number"}</label>
           <input
             type="text"
             className="form-input"
@@ -552,7 +553,7 @@ const closeCamera = () => {
             value={formValues.employeeNumber}
             onChange={handleEmployeeNumberChange}
             disabled={isLoading || (profile || user)?.role === 'Site Incharge'}
-            placeholder={(profile || user)?.role === 'Site Incharge' ? "Auto-filled (Site Incharge)" : "Enter employee number"}
+            placeholder={isRented ? "Enter Qatar ID Number" : ((profile || user)?.role === 'Site Incharge' ? "Auto-filled (Site Incharge)" : "Enter employee number")}
             required
           />
           {submitted && formErrors.employeeNumber && (
@@ -590,6 +591,8 @@ const closeCamera = () => {
             pattern="\+974 [0-9]{4} [0-9]{4}"
             disabled={isLoading}
             required
+            minLength={11}
+            maxLength={11}
           />
           {submitted && formErrors.operatorMobile && (
             <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>{formErrors.operatorMobile}</div>
