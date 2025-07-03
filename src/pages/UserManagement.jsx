@@ -37,7 +37,7 @@ const UserManagement = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.ceil(users.length / USERS_PER_PAGE);
-  const paginatedUsers = users.slice((currentPage - 1) * USERS_PER_PAGE, currentPage * USERS_PER_PAGE);
+  const paginatedUsers = users.slice((currentPage - 1) * USERS_PER_PAGE, currentPage * USERS_PER_PAGE)?.reverse() || [];
   const editFormRef = useRef(null);
   const firstInputRef = useRef(null);
 
@@ -53,7 +53,7 @@ const UserManagement = () => {
         ]);
         setSites(sitesRes?.data || []);
         setRoles(rolesRes || []);
-        setUsers(usersRes?.data || []);
+        setUsers(usersRes?.data?.slice()?.reverse() || []);
         if ((usersRes?.data || []).length > 0) {
           console.log('First user object:', usersRes.data[0]);
         }
