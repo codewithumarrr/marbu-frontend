@@ -16,6 +16,7 @@ import { generateReceivingInvoiceExcel } from "../utils/excelExport.js";
 
 
 import { useUserStore } from "../store/userStore.js";
+import { getAllEmployees } from "../services/employeesService.js";
 
 function FuelReceiving() {
   const user = useUserStore(state => state.user);
@@ -138,7 +139,7 @@ function FuelReceiving() {
       // Get tanks (optionally by site)
       const tanksRes = await getTanksBySite(formValues.siteId);
       // Get employees (tank in-charge)
-      const employeesRes = await getTankInchargeEmployees();
+      const employeesRes = await getAllEmployees();
       // Get suppliers
       const suppliersRes = await getActiveSuppliers();
 
