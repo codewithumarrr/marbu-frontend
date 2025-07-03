@@ -53,6 +53,9 @@ const UserManagement = () => {
         setSites(sitesRes?.data || []);
         setRoles(rolesRes || []);
         setUsers(usersRes?.data || []);
+        if ((usersRes?.data || []).length > 0) {
+          console.log('First user object:', usersRes.data[0]);
+        }
       } catch (err) {
         setApiError('Failed to load initial data');
       }
@@ -65,6 +68,9 @@ const UserManagement = () => {
     try {
       const response = await getAllUsers();
       setUsers(response?.data || []);
+      if ((response?.data || []).length > 0) {
+        console.log('First user object:', response.data[0]);
+      }
     } catch (err) {
       setApiError('Failed to load users');
     }
@@ -160,6 +166,8 @@ const UserManagement = () => {
 
         await register(formData, true); // true for multipart
         setShowCreateModal(true);
+        // Restore: reload users from backend instead of unshifting
+        await loadUsers();
       }
 
       // Reset form and file input
@@ -177,9 +185,6 @@ const UserManagement = () => {
       const fileInput = document.getElementById('user-picture-upload');
       if (fileInput) fileInput.value = '';
       setSubmitted(false);
-
-      // Reload users list
-      await loadUsers();
 
     } catch (err) {
       setApiError(err?.response?.data?.message || err.message || 'Error saving user');
@@ -563,9 +568,55 @@ const UserManagement = () => {
         {/* Recent Users Table */}
         {users.length > 0 && (
           <div style={{
-          marginTop: 40,
-          width: "100%"
+            marginTop: 40,
+            width: "100%",
+            position: 'relative',
           }}>
+            {/* Delete Success Modal (table top) */}
+            {showDeleteModal && (
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                top: '-70px',
+                margin: '0 auto',
+                zIndex: 1000,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'auto',
+              }}>
+                <div style={{
+                  background: '#fff',
+                  borderRadius: 12,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                  padding: '24px 32px',
+                  minWidth: 320,
+                  maxWidth: '90vw',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 18,
+                }}>
+                  <div style={{ fontSize: 32, color: '#25b86f', marginBottom: 8 }}>✅</div>
+                  <div style={{ fontWeight: 600, fontSize: 20, color: '#23476a' }}>User deleted successfully</div>
+                  <button onClick={() => setShowDeleteModal(false)} style={{
+                    marginTop: 10,
+                    background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '10px 32px',
+                    fontWeight: 700,
+                    fontSize: 16,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(37,99,235,0.10)',
+                    letterSpacing: 1
+                  }}>OK</button>
+                </div>
+              </div>
+            )}
             <div>
               <div style={{
                 fontWeight: 600,
@@ -795,54 +846,6 @@ const UserManagement = () => {
             </div>,
             document.body
           )
-        )}
-        {/* Delete Success Modal */}
-        {showDeleteModal && (
-          <div style={{
-            position: 'fixed',
-            inset: 0,
-            width: '100vw',
-            height: '100vh',
-            background: 'rgba(0,0,0,0.18)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999
-          }}>
-            <div style={{
-              background: '#fff',
-              borderRadius: 12,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-              padding: '32px 40px',
-              minWidth: 320,
-              maxWidth: '90vw',
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 18,
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)'
-            }}>
-              <div style={{ fontSize: 32, color: '#25b86f', marginBottom: 8 }}>✅</div>
-              <div style={{ fontWeight: 600, fontSize: 20, color: '#23476a' }}>User deleted successfully</div>
-              <button onClick={() => setShowDeleteModal(false)} style={{
-                marginTop: 10,
-                background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 8,
-                padding: '10px 32px',
-                fontWeight: 700,
-                fontSize: 16,
-                cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(37,99,235,0.10)',
-                letterSpacing: 1
-              }}>OK</button>
-            </div>
-          </div>
         )}
         {/* Update Success Modal */}
         {showUpdateModal && (

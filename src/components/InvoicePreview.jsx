@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import html2pdf from 'html2pdf.js';
+import { useNavigate } from 'react-router-dom';
 
 // Helper for PDF export (to be implemented later)
 // import html2pdf from 'html2pdf.js';
@@ -26,6 +27,7 @@ const InvoicePreview = ({
   footerImg = "https://i.ibb.co/prR9PZvF/s-blob-v1-IMAGE-Acfj-L3-Uejf-I.png"
 }) => {
   const printRef = useRef();
+  const navigate = useNavigate();
 
   const handlePrint = () => {
     window.print();
@@ -48,10 +50,17 @@ const InvoicePreview = ({
 
   return (
     <div style={{ position: 'relative' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 16, alignItems: 'center' }}>
+        <button
+          className="btn btn-secondary"
+          style={{ marginRight: 'auto', display: 'block' }}
+          onClick={() => navigate('/invoices')}
+        >
+          ← Back to Invoices
+        </button>
         <button className="btn btn-primary" onClick={handlePrint}>Print</button>
         <button className="btn btn-secondary" onClick={handlePDF}>Export PDF</button>
-      </div>
+      </div> 
       <div className="invoice-container" ref={printRef}>
         <header className="invoice-header">
           <img src={logoUrl} alt="logo" />
@@ -137,13 +146,13 @@ const InvoicePreview = ({
           <div style={{ textAlign: 'center' }}><strong>Checked by:</strong> {checkedBy}</div>
           <div style={{ textAlign: 'right' }}><strong>Approved by:</strong> {approvedBy}</div>
         </section>
-        <footer className="invoice-footer">
-          <img src={footerImg} alt="footer" />
+        <footer className="invoice-footer" style={{ textAlign: 'center', marginTop: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <img src={footerImg} alt="footer" style={{ display: 'block', margin: '0 auto', maxWidth: '100%' }} />
         </footer>
       </div>
       {/* Inline style tag for print and layout, copy from your HTML or import as CSS */}
       <style>{`
-        .invoice-container { background-color: #fff; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 100%; padding: 10px; line-height: 1.6; transition: all 0.3s ease-in-out; box-sizing: border-box; display: flex; flex-direction: column; min-height: 98vh; }
+        .invoice-container { background-color: #fff; border-radius: 10px; width: 100%; padding: 10px; line-height: 1.6; transition: all 0.3s ease-in-out; box-sizing: border-box; display: flex; flex-direction: column; min-height: 98vh; }
         .invoice-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
         .invoice-bottom-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
         .invoice-bottom-header h1 { color: #015998; font-size: 2.5em; margin: 0; font-weight: 700; line-height: 50px; }
@@ -174,7 +183,7 @@ const InvoicePreview = ({
         .payment-terms h3 { color: #25b86f; margin-bottom: 10px; font-size: 1.2em; }
         .payment-terms p { font-size: 0.9em; margin: 0; }
         .invoice-footer {
-          text-align: center;
+          text-align: center !important;
           font-size: 0.8em;
           color: #666;
           padding-top: 20px;
@@ -182,6 +191,10 @@ const InvoicePreview = ({
           margin-top: auto;
           background: white;
           page-break-inside: avoid;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
         }
         /* --- PRINT-ONLY CSS PATCH --- */
         @media print {
@@ -209,8 +222,10 @@ const InvoicePreview = ({
             break-inside: avoid !important;
           }
           .invoice-footer {
-            page-break-after: avoid !important;
-            break-after: avoid !important;
+            text-align: center !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin-top: auto !important;
           }
         }
         @page { margin: 0.5in; size: A4; }

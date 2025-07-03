@@ -47,9 +47,7 @@ export default function InvoiceView() {
  console.log(invoice)
   return (
     <div id="print-invoice" style={{ maxWidth: 900, margin: '0 auto', padding: 24 }}>
-      <button className="btn btn-secondary" style={{ marginBottom: 24 }} onClick={() => navigate('/invoices')}>
-        ← Back to Invoices
-      </button>
+   
       <InvoicePreview
         invoiceNo={invoice.invoiceNo}
         company={invoice.supplier}

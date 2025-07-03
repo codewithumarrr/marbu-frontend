@@ -44,79 +44,93 @@ function FuelUsageSiteInchargeForm({ onSuccess }) {
   const [signatureCaptured, setSignatureCaptured] = useState(false);
   const [signatureData, setSignatureData] = useState('');
   const [otherLocation, setOtherLocation] = useState('');
-// Camera modal state
-const [showCamera, setShowCamera] = useState(false);
-const [cameraError, setCameraError] = useState('');
-const videoRef = React.useRef(null);
-// Camera facing mode state
-const [facingMode, setFacingMode] = useState("environment");
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraError, setCameraError] = useState('');
+  const videoRef = React.useRef(null);
+  const canvasRef = React.useRef(null);
+  const [facingMode, setFacingMode] = useState("environment");
+  const [usageRecords, setUsageRecords] = useState([
+    {
+      dateTime: '2024-07-01T09:00',
+      plateNumberMachineId: 'ABC-1234',
+      operatorName: 'Ali Khan',
+      quantity: 50,
+      odometerReading: 12345,
+    },
+    {
+      dateTime: '2024-07-01T08:30',
+      plateNumberMachineId: 'XYZ-5678',
+      operatorName: 'Sara Ahmed',
+      quantity: 40,
+      odometerReading: 23456,
+    },
+    {
+      dateTime: '2024-06-30T17:15',
+      plateNumberMachineId: 'LMN-9101',
+      operatorName: 'John Doe',
+      quantity: 60,
+      odometerReading: 34567,
+    },
+  ]);
 
-// Flip camera
-const flipCamera = async () => {
-  const newMode = facingMode === "environment" ? "user" : "environment";
-  setFacingMode(newMode);
-  if (showCamera) {
+  const flipCamera = async () => {
+    const newMode = facingMode === "environment" ? "user" : "environment";
+    setFacingMode(newMode);
+    if (showCamera) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: newMode } });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        setCameraError('Unable to access camera');
+      }
+    }
+  };
+
+  const openCamera = async () => {
+    setCameraError('');
+    setShowCamera(true);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: newMode } });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
     } catch (err) {
       setCameraError('Unable to access camera');
     }
-  }
-};
-const canvasRef = React.useRef(null);
+  };
 
-// Open camera and stream video
-const openCamera = async () => {
-  setCameraError('');
-  setShowCamera(true);
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream;
-    }
-  } catch (err) {
-    setCameraError('Unable to access camera');
-  }
-};
-
-// Capture photo from video
-const capturePhoto = () => {
-  if (videoRef.current && canvasRef.current) {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-    canvas.toBlob(blob => {
-      if (blob) {
-        const file = new File([blob], "speedometer.jpg", { type: "image/jpeg" });
-        setFormValues(prev => ({ ...prev, speedometerImage: file }));
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        if (blob) {
+          const file = new File([blob], "speedometer.jpg", { type: "image/jpeg" });
+          setFormValues(prev => ({ ...prev, speedometerImage: file }));
+        }
+      }, "image/jpeg");
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
       }
-    }, "image/jpeg");
-    // Stop camera stream
-    if (video.srcObject) {
-      video.srcObject.getTracks().forEach(track => track.stop());
+      setShowCamera(false);
     }
+  };
+
+  const closeCamera = () => {
     setShowCamera(false);
-  }
-};
+    if (videoRef.current && videoRef.current.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+    }
+  };
 
-// Close camera and stop stream
-const closeCamera = () => {
-  setShowCamera(false);
-  if (videoRef.current && videoRef.current.srcObject) {
-    videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-  }
-};
-
-  // Load form data on mount
   useEffect(() => {
     loadFormData();
     autoFillForSiteIncharge();
-    // eslint-disable-next-line
   }, []);
 
   const loadFormData = async () => {
@@ -140,7 +154,6 @@ const closeCamera = () => {
     }
   };
 
-  // Auto-fill for Site Incharge
   const autoFillForSiteIncharge = () => {
     const currentUser = profile || user;
     if (currentUser?.role === 'Site Incharge') {
@@ -155,7 +168,6 @@ const closeCamera = () => {
     }
   };
 
-  // Employee number lookup
   useEffect(() => {
     if (formValues.employeeNumber && formValues.employeeNumber.length >= 3) {
       const timeoutId = setTimeout(() => {
@@ -182,7 +194,6 @@ const closeCamera = () => {
     }
   };
 
-  // Input handlers
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormValues(prev => ({
@@ -228,7 +239,6 @@ const closeCamera = () => {
     }
   };
 
-  // Plate number change and lookup
   const handlePlateNumberChange = (e) => {
     const { value } = e.target;
     setFormValues(prev => ({
@@ -288,7 +298,6 @@ const closeCamera = () => {
     } catch (err) {}
   };
 
-  // Odometer handlers
   const handleOdometerBlur = () => {
     if (
       formValues.odometerReading &&
@@ -304,7 +313,6 @@ const closeCamera = () => {
     }
   };
 
-  // Signature pad
   const SignaturePad = () => (
     <div
       className={`thumbprint-pad ${signatureCaptured ? 'thumbprint-captured' : ''}`}
@@ -325,7 +333,6 @@ const closeCamera = () => {
     </div>
   );
 
-  // Validation
   const validateForm = () => {
     const errors = {};
     if (!formValues.vehicleEquipmentType) errors.vehicleEquipmentType = 'Vehicle/Equipment type is required';
@@ -344,7 +351,6 @@ const closeCamera = () => {
     return Object.keys(errors).length === 0;
   };
 
-  // Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitted(true);
@@ -362,6 +368,7 @@ const closeCamera = () => {
       };
       await createDieselConsumption(payload);
       setSuccessMessage('Fuel consumption record created successfully!');
+      setUsageRecords(prev => [payload, ...prev]);
       setFormValues({
         vehicleEquipmentType: '',
         plateNumberMachineId: '',
@@ -392,12 +399,10 @@ const closeCamera = () => {
     }
   };
 
-  // Job options for react-select
   const jobOptions = (formData.jobs && formData.jobs.length > 0)
     ? formData.jobs.map(job => ({ value: job.job_number, label: job.job_number }))
     : [{ value: 'other', label: 'Other' }];
 
-  // Custom styles for react-select
   const customSelectStyles = {
     control: (provided, state) => ({
       ...provided,
@@ -783,6 +788,60 @@ const closeCamera = () => {
         </div>
       )}
     </form>
+    {/* Recent Fuel Usage Table */}
+    {usageRecords.length > 0 && (
+      <div style={{ marginTop: 40, width: "100%" }}>
+        <div>
+          <div style={{
+            fontWeight: 600,
+            fontSize: 24,
+            color: '#015998',
+          }}>
+            Recent Fuel Usage
+          </div>
+        </div>
+        <div style={{
+          width: '100%',
+          height: 5,
+          background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
+          borderRadius: 8,
+          margin: '10px 0 18px 0',
+        }} />
+        <div className="table-container" style={{ overflowX: 'auto', borderRadius: '12px' }}>
+          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, background: 'transparent' }}>
+            <thead style={{ background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)' }}>
+              <tr>
+                <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15 }}>Date</th>
+                <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15 }}>Plate Number</th>
+                <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15 }}>Driver</th>
+                <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15 }}>Quantity</th>
+                <th style={{ color: '#fff', textAlign: 'left', fontWeight: 600, padding: 15 }}>Odometer</th>
+                {/* Add more columns as needed */}
+              </tr>
+            </thead>
+            <tbody>
+              {usageRecords.map((rec, idx) => (
+                <tr key={idx} style={{
+                  background: '#fff',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  borderRadius: 10,
+                  marginTop: 8,
+                  marginBottom: 8,
+                  height: 60,
+                }}>
+                  <td style={{ padding: '10px 16px' }}>{rec.dateTime}</td>
+                  <td style={{ padding: '10px 16px' }}>{rec.plateNumberMachineId}</td>
+                  <td style={{ padding: '10px 16px' }}>{rec.operatorName}</td>
+                  <td style={{ padding: '10px 16px' }}>{rec.quantity}</td>
+                  <td style={{ padding: '10px 16px' }}>{rec.odometerReading}</td>
+                  {/* Add more cells as needed */}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )}
     </React.Fragment>
   );
 }

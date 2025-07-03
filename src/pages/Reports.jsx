@@ -18,7 +18,7 @@ function Reports() {
     "Date",
     "Site",
     "Vehicle/Equipment",
-    "Operator",
+    "Name",
     "Fuel Used (L)",
     "Efficiency",
     "Actions",
@@ -38,13 +38,13 @@ function Reports() {
     siteId: "",
     jobId: "",
     vehicleType: "",
-    operator: "",
+    name: "",
     plateNumber: "",
     fuelMin: "",
     fuelMax: "",
     efficiency: ""
   });
-
+  
   // Ref for the filter form
   const filterFormRef = useRef(null);
 
@@ -156,7 +156,7 @@ function Reports() {
               jobNo: row.jobNumber,
               ltrs: row.fuelUsed,
               hours: row.odometerReading || '--',
-              driver: row.operator,
+              name: row.name,
               signature: '--',
             }))}
             subtotal={reportData.reduce((sum, row) => sum + (parseFloat(row.fuelUsed) || 0), 0).toLocaleString()}
@@ -366,7 +366,7 @@ function Reports() {
                 <td>{row.date}</td>
                 <td>{row.site}</td>
                 <td>{row.vehicle}</td>
-                <td>{row.operator}</td>
+                <td>{row.name}</td>
                 <td>{row.fuelUsed}</td>
                 <td>{row.efficiency}</td>
                 <td>
@@ -392,7 +392,7 @@ function Reports() {
                     siteId: form.siteId.value,
                     jobId: form.jobId ? form.jobId.value : "",
                     vehicleType: form.vehicleType.value,
-                    operator: form.operator ? form.operator.value : "",
+                    name: form.name ? form.name.value : "",
                     plateNumber: form.plateNumber ? form.plateNumber.value : "",
                     fuelMin: form.fuelMin ? form.fuelMin.value : "",
                     fuelMax: form.fuelMax ? form.fuelMax.value : "",
