@@ -15,7 +15,11 @@ import {
 import { generateReceivingInvoiceExcel } from "../utils/excelExport.js";
 
 
+import { useUserStore } from "../store/userStore.js";
+
 function FuelReceiving() {
+  const user = useUserStore(state => state.user);
+
   const [formData, setFormData] = useState({
     tanks: [],
     employees: [],
@@ -43,7 +47,7 @@ function FuelReceiving() {
     customSupplierName: '',
     dieselRate: '',
     notes: '',
-    siteId: '',
+    siteId: user?.site_id || '',
   });
   const [formErrors, setFormErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -132,7 +136,7 @@ function FuelReceiving() {
       // Get next receipt number
       const receiptRes = await getNextReceiptNumber();
       // Get tanks (optionally by site)
-      const tanksRes = await getTanksBySite(formValues.siteId || 1);
+      const tanksRes = await getTanksBySite(formValues.siteId);
       // Get employees (tank in-charge)
       const employeesRes = await getTankInchargeEmployees();
       // Get suppliers
