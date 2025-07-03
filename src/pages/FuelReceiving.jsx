@@ -58,12 +58,12 @@ function FuelReceiving() {
   const [recordsPerPage] = useState(4);
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
 
-  // Edit modal state
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  // Edit state
   const [editingRecord, setEditingRecord] = useState(null);
-  const [editFormValues, setEditFormValues] = useState({});
-  const [editFormErrors, setEditFormErrors] = useState({});
   const [isUpdating, setIsUpdating] = useState(false);
+  // Success modal state
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalMessage, setSuccessModalMessage] = useState('');
   // For delete confirmation
   const [deleteId, setDeleteId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -279,17 +279,15 @@ function FuelReceiving() {
     }
   };
 
-  // Edit functionality
   const handleEdit = async (recordId) => {
     setIsLoading(true);
     setError('');
     try {
       const response = await getDieselReceivingById(recordId);
       const record = response?.data;
-      
       if (record) {
         setEditingRecord(record);
-        setEditFormValues({
+        setFormValues({
           receiptNumber: record.receipt_number,
           dateTime: record.received_datetime ? new Date(record.received_datetime).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
           quantity: record.quantity_liters,
@@ -301,7 +299,7 @@ function FuelReceiving() {
           notes: record.notes,
           siteId: record.site_id,
         });
-        setIsEditModalOpen(true);
+        setSubmitted(false);
       }
     } catch (err) {
       setError('Record not found for editing');
@@ -310,75 +308,30 @@ function FuelReceiving() {
     }
   };
 
-  const handleEditInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditFormValues(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    // Clear field error when user starts typing
-    if (editFormErrors[name]) {
-      setEditFormErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-  const validateEditForm = () => {
-    const errors = {};
-
-    if (!editFormValues.quantity || editFormValues.quantity <= 0) {
-      errors.quantity = 'Quantity is required and must be greater than 0';
-    }
-    if (!editFormValues.tankId) {
-      errors.tankId = 'Tank selection is required';
-    }
-    if (!editFormValues.receivedBy) {
-      errors.receivedBy = 'Received by is required';
-    }
-    if (!editFormValues.supplierId) {
-      errors.supplierId = 'Supplier selection is required';
-    }
-    if (!editFormValues.dateTime) {
-      errors.dateTime = 'Date and time is required';
-    }
-
-    setEditFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleEditSubmit = async (e) => {
+  const handleUpdate = async (e) => {
     e.preventDefault();
-    
-    if (!validateEditForm()) {
-      return;
-    }
-
+    if (!editingRecord) return;
+    if (!validateForm()) return;
     setIsUpdating(true);
     setError('');
     setSuccessMessage('');
     try {
       await updateDieselReceiving(editingRecord.receiving_id, {
-        receiptNumber: editFormValues.receiptNumber,
-        dateTime: editFormValues.dateTime,
-        quantity: editFormValues.quantity,
-        tankId: editFormValues.tankId,
-        receivedBy: editFormValues.receivedBy,
-        supplierId: editFormValues.supplierId,
-        customSupplierName: editFormValues.customSupplierName,
-        dieselRate: editFormValues.dieselRate,
-        notes: editFormValues.notes,
-        siteId: editFormValues.siteId,
+        receiptNumber: formValues.receiptNumber,
+        dateTime: formValues.dateTime,
+        quantity: formValues.quantity,
+        tankId: formValues.tankId,
+        receivedBy: formValues.receivedBy,
+        supplierId: formValues.supplierId,
+        customSupplierName: formValues.customSupplierName,
+        dieselRate: formValues.dieselRate,
+        notes: formValues.notes,
+        siteId: formValues.siteId,
       });
-      setSuccessMessage('Fuel receiving record updated successfully!');
-      setIsEditModalOpen(false);
+      setSuccessModalMessage('Fuel receiving record updated successfully!');
+      setShowSuccessModal(true);
       setEditingRecord(null);
-      setEditFormValues({});
-      setEditFormErrors({});
-      
-      // Reload records to show updated data
+      resetForm();
       loadReceivingRecords();
     } catch (err) {
       setError('Failed to update record');
@@ -387,11 +340,9 @@ function FuelReceiving() {
     }
   };
 
-  const closeEditModal = () => {
-    setIsEditModalOpen(false);
+  const handleCancelEdit = () => {
     setEditingRecord(null);
-    setEditFormValues({});
-    setEditFormErrors({});
+    resetForm();
   };
 
   // Pagination functions
@@ -528,6 +479,11 @@ function FuelReceiving() {
     }
   };
 
+  const closeSuccessModal = () => {
+    setShowSuccessModal(false);
+    setSuccessModalMessage('');
+  };
+
   return (
     <div id="receiving" className="content-panel">
       <h2 style={{ marginBottom: '20px', color: '#015998', fontWeight: 700, fontSize: 27 }}>Fuel Receiving Entry</h2>
@@ -569,7 +525,7 @@ function FuelReceiving() {
           <span style={{ color: '#666' }}>Loading form data...</span>
         </div>
       ) : (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={editingRecord ? handleUpdate : handleSubmit}>
           <div className="form-grid">
             <div className="form-group">
               <label className="form-label">Receipt Number</label>
@@ -806,51 +762,67 @@ function FuelReceiving() {
           </div> */}
 
           <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isLoading}
-              style={{
-                opacity: isLoading ? 0.6 : 1,
-                cursor: isLoading ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {isLoading ? (
-                <>
-                  <div style={{
-                    width: '16px',
-                    height: '16px',
-                    border: '2px solid #fff',
-                    borderTop: '2px solid transparent',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite',
-                    display: 'inline-block',
-                    marginRight: '8px'
-                  }}></div>
-                  Saving...
-                </>
-              ) : (
-                <>💾 Save Receipt</>
-              )}
-            </button>
-
-            {/* <button
-              type="button"
-              className="btn btn-invoice"
-              onClick={generateInvoice}
-              disabled={isLoading}
-            >
-              📄 Generate Invoice
-            </button> */}
-
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={resetForm}
-              disabled={isLoading}
-            >
-              🔄 Reset Form
-            </button>
+            {editingRecord ? (
+              <>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isUpdating}
+                  style={{
+                    opacity: isUpdating ? 0.6 : 1,
+                    cursor: isUpdating ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isUpdating ? 'Updating...' : 'Update'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleCancelEdit}
+                  disabled={isUpdating}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isLoading}
+                  style={{
+                    opacity: isLoading ? 0.6 : 1,
+                    cursor: isLoading ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isLoading ? (
+                    <>
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid #fff',
+                        borderTop: '2px solid transparent',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite',
+                        display: 'inline-block',
+                        marginRight: '8px'
+                      }}></div>
+                      Saving...
+                    </>
+                  ) : (
+                    <>💾 Save Receipt</>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={resetForm}
+                  disabled={isLoading}
+                >
+                  🔄 Reset Form
+                </button>
+              </>
+            )}
           </div>
         </form>
       )}
@@ -1095,310 +1067,63 @@ function FuelReceiving() {
         </div>
       </div>
 
-      {/* Edit Modal */}
-      {isEditModalOpen && (
+      {/* Success Modal */}
+      {showSuccessModal && (
         <div style={{
           position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
+          background: 'rgba(0,0,0,0.5)',
           display: 'flex',
-          justifyContent: 'center',
           alignItems: 'center',
-          zIndex: 1000
+          justifyContent: 'center',
+          zIndex: 2000
         }}>
           <div style={{
             background: '#fff',
-            borderRadius: '16px',
-            padding: '32px',
-            maxWidth: '600px',
-            width: '90%',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            padding: 32,
+            borderRadius: 12,
+            boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
+            textAlign: 'center',
+            maxWidth: '400px',
+            width: '90%'
           }}>
             <div style={{
+              width: '60px',
+              height: '60px',
+              background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
+              borderRadius: '50%',
               display: 'flex',
-              justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '24px'
+              justifyContent: 'center',
+              margin: '0 auto 16px auto'
             }}>
-              <h3 style={{ margin: 0, color: '#015998', fontSize: '24px', fontWeight: '700' }}>
-                Edit Fuel Receiving Record
-              </h3>
-              <button
-                onClick={closeEditModal}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '24px',
-                  cursor: 'pointer',
-                  color: '#6b7280',
-                  padding: '4px'
-                }}
-              >
-                ✕
-              </button>
+              <span style={{ fontSize: '24px', color: '#fff' }}>✅</span>
             </div>
-
-            <form onSubmit={handleEditSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                    Receipt Number
-                  </label>
-                  <input
-                    type="text"
-                    value={editFormValues.receiptNumber || ''}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      backgroundColor: '#f9fafb',
-                      color: '#6b7280'
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                    Date & Time
-                  </label>
-                  <input
-                    type="datetime-local"
-                    name="dateTime"
-                    value={editFormValues.dateTime || ''}
-                    onChange={handleEditInputChange}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: editFormErrors.dateTime ? '1px solid #dc2626' : '1px solid #d1d5db',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  {editFormErrors.dateTime && (
-                    <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
-                      {editFormErrors.dateTime}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                    Quantity (Liters)
-                  </label>
-                  <input
-                    type="number"
-                    name="quantity"
-                    value={editFormValues.quantity || ''}
-                    onChange={handleEditInputChange}
-                    min="0"
-                    step="0.1"
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: editFormErrors.quantity ? '1px solid #dc2626' : '1px solid #d1d5db',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  {editFormErrors.quantity && (
-                    <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
-                      {editFormErrors.quantity}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                    Tank Location
-                  </label>
-                  <select
-                    name="tankId"
-                    value={editFormValues.tankId || ''}
-                    onChange={handleEditInputChange}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: editFormErrors.tankId ? '1px solid #dc2626' : '1px solid #d1d5db',
-                      borderRadius: '8px'
-                    }}
-                  >
-                    <option value="">Select Tank</option>
-                    {formData?.tanks?.map(tank => (
-                      <option key={tank.tank_id} value={tank.tank_id}>
-                        {tank.tank_name} - {tank.site_name || tank.location}
-                      </option>
-                    ))}
-                  </select>
-                  {editFormErrors.tankId && (
-                    <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
-                      {editFormErrors.tankId}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                    Received By
-                  </label>
-                  <select
-                    name="receivedBy"
-                    value={editFormValues.receivedBy || ''}
-                    onChange={handleEditInputChange}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: editFormErrors.receivedBy ? '1px solid #dc2626' : '1px solid #d1d5db',
-                      borderRadius: '8px'
-                    }}
-                  >
-                    <option value="">Select Employee</option>
-                    {formData?.employees?.map(employee => (
-                      <option key={employee.employee_number} value={employee.employee_number}>
-                        {employee.display_name || employee.employee_name}
-                      </option>
-                    ))}
-                  </select>
-                  {editFormErrors.receivedBy && (
-                    <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
-                      {editFormErrors.receivedBy}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                    Supplier
-                  </label>
-                  <select
-                    name="supplierId"
-                    value={editFormValues.supplierId || ''}
-                    onChange={handleEditInputChange}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: editFormErrors.supplierId ? '1px solid #dc2626' : '1px solid #d1d5db',
-                      borderRadius: '8px'
-                    }}
-                  >
-                    <option value="">Select Supplier</option>
-                    {formData?.suppliers?.map(supplier => (
-                      <option key={supplier.supplier_id} value={supplier.supplier_id}>
-                        {supplier.supplier_name}
-                      </option>
-                    ))}
-                    <option value="other">Other (Enter manually)</option>
-                  </select>
-                  {editFormErrors.supplierId && (
-                    <div style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
-                      {editFormErrors.supplierId}
-                    </div>
-                  )}
-                </div>
-                {editFormValues.supplierId === "other" && (
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                      Custom Supplier Name
-                    </label>
-                    <input
-                      type="text"
-                      name="customSupplierName"
-                      value={editFormValues.customSupplierName || ""}
-                      onChange={handleEditInputChange}
-                      placeholder="Enter supplier name"
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '8px'
-                      }}
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                    Diesel Rate (QAR/Liter)
-                  </label>
-                  <input
-                    type="number"
-                    name="dieselRate"
-                    value={editFormValues.dieselRate || ''}
-                    onChange={handleEditInputChange}
-                    min="0"
-                    step="0.01"
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px'
-                    }}
-                  />
-                </div>
-
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
-                    Notes
-                  </label>
-                  <input
-                    type="text"
-                    name="notes"
-                    value={editFormValues.notes || ''}
-                    onChange={handleEditInputChange}
-                    placeholder="Additional notes"
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px'
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div style={{
-                display: 'flex',
-                gap: '12px',
-                justifyContent: 'flex-end',
-                marginTop: '24px'
-              }}>
-                <button
-                  type="button"
-                  onClick={closeEditModal}
-                  style={{
-                    background: '#f3f4f6',
-                    color: '#374151',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    padding: '12px 24px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isUpdating}
-                  style={{
-                    background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '12px 24px',
-                    fontWeight: '600',
-                    cursor: isUpdating ? 'not-allowed' : 'pointer',
-                    opacity: isUpdating ? 0.6 : 1
-                  }}
-                >
-                  {isUpdating ? 'Updating...' : 'Update Record'}
-                </button>
-              </div>
-            </form>
+            <h3 style={{ marginBottom: 16, color: '#015998', fontSize: '20px', fontWeight: '600' }}>
+              Success!
+            </h3>
+            <p style={{ marginBottom: 24, color: '#374151', fontSize: '16px' }}>
+              {successModalMessage}
+            </p>
+            <button
+              className="btn btn-primary"
+              onClick={closeSuccessModal}
+              style={{
+                background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
+                border: 'none',
+                padding: '12px 24px',
+                borderRadius: '8px',
+                color: '#fff',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              OK
+            </button>
           </div>
         </div>
       )}

@@ -190,7 +190,7 @@ function Dashboard() {
 
           {/* Recent Activity Table */}
           <div style={{ marginTop: '20px' }}>
-            <h3 style={{ color: '#015998', marginBottom: '16px' }}>Recent Fuel Activities</h3>
+            <h3 style={{ color: '#015998', margin: 0, fontWeight: 700, fontSize: 27 }}>Recent Fuel Activities</h3>
             {recentActivity.length > 0 ? (
               <TableComponent
                 headers={activityHeaders}
