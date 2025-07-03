@@ -75,6 +75,8 @@ function FuelReceiving() {
 
   // Ref for custom supplier input
   const customSupplierRef = useRef(null);
+  const formRef = useRef(null);
+  const firstInputRef = useRef(null);
 
   // Load form data on component mount
   useEffect(() => {
@@ -305,6 +307,14 @@ function FuelReceiving() {
           siteId: record.site_id,
         });
         setSubmitted(false);
+        setTimeout(() => {
+          if (formRef.current) {
+            formRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          if (firstInputRef.current) {
+            firstInputRef.current.focus();
+          }
+        }, 0);
       }
     } catch (err) {
       setError('Record not found for editing');
@@ -530,11 +540,12 @@ function FuelReceiving() {
           <span style={{ color: '#666' }}>Loading form data...</span>
         </div>
       ) : (
-        <form onSubmit={editingRecord ? handleUpdate : handleSubmit}>
+        <form ref={formRef} onSubmit={editingRecord ? handleUpdate : handleSubmit}>
           <div className="form-grid">
             <div className="form-group">
               <label className="form-label">Receipt Number</label>
               <input
+                ref={firstInputRef}
                 type="text"
                 className="form-input"
                 name="receiptNumber"
