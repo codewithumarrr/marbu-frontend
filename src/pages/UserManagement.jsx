@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { getAllRoles, register, getAllUsers, updateUser, deleteUser, getUserByEmployeeNumber } from '../services/authService.js';
 import { getReportSites } from '../services/reportsService.js';
@@ -38,6 +38,8 @@ const UserManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.ceil(users.length / USERS_PER_PAGE);
   const paginatedUsers = users.slice((currentPage - 1) * USERS_PER_PAGE, currentPage * USERS_PER_PAGE);
+  const editFormRef = useRef(null);
+  const firstInputRef = useRef(null);
 
   useEffect(() => {
     // Load initial data
@@ -198,10 +200,14 @@ const UserManagement = () => {
     setUserPicture(null);
     setUserPicturePreview(user.user_picture || null);
     setEditUserId(user.user_id || user.employee_id);
-    setSubmitted(false);
-    // Reset file input value
-    const fileInput = document.getElementById('user-picture-upload');
-    if (fileInput) fileInput.value = '';
+    setTimeout(() => {
+      if (editFormRef.current) {
+        editFormRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      if (firstInputRef.current) {
+        firstInputRef.current.focus();
+      }
+    }, 0);
   };
 
   // Show custom confirm modal
@@ -249,6 +255,7 @@ const UserManagement = () => {
         <div style={{ color: '#015998', marginBottom: 20, fontWeight: 700, fontSize: 27 }}>User Management</div>
 
         <form
+          ref={editFormRef}
           style={{ width: '100%' }}
           onSubmit={handleSubmit}
           noValidate
@@ -347,6 +354,7 @@ const UserManagement = () => {
               <label className="form-label" >Employee Number</label>
               
                 <input
+                  ref={firstInputRef}
                   type="text"
                   className='form-input'
                   placeholder="Enter Employee Number"
@@ -505,6 +513,52 @@ const UserManagement = () => {
           }} disabled={loading}>
             {loading ? 'Saving...' : (editUserId !== null ? 'Update User' : 'Create User')}
           </button>
+          {editUserId !== null && (
+            <button
+              type="button"
+              style={{
+                width: 'auto',
+                background: '#e5e7eb',
+                color: '#374151',
+                fontWeight: 700,
+                fontSize: 16,
+                border: 'none',
+                borderRadius: 8,
+                padding: '10px 20px',
+                marginTop: 8,
+                marginLeft: 12,
+                boxShadow: '0 2px 8px rgba(37,99,235,0.10)',
+                letterSpacing: 1,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'background 0.2s',
+                opacity: loading ? 0.7 : 1
+              }}
+              disabled={loading}
+              onClick={() => {
+                setEditUserId(null);
+                setName('');
+                setEmployeeNumber('');
+                setMobileNumber('');
+                setPassword('');
+                setRoleName('');
+                setSiteId('');
+                setQatarIdNumber('');
+                setProfession('');
+                setUserPicture(null);
+                setUserPicturePreview(null);
+                setNameError('');
+                setUserError('');
+                setMobileError('');
+                setPasswordError('');
+                setRoleError('');
+                setSiteError('');
+                setSubmitted(false);
+                setApiError('');
+              }}
+            >
+              Cancel
+            </button>
+          )}
         </form>
         {/* Recent Users Table */}
         {users.length > 0 && (
