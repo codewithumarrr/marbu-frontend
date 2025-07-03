@@ -70,7 +70,11 @@ function FuelUsageDriverForm({ onSuccess }) {
         const verificationResult = await verifyAuthenticationResponse(credential);
         if (verificationResult.status === 'success' && verificationResult.data.verification.verified) {
           setSignatureCaptured(true);
-          setSignatureData('authenticated');
+          setSignatureData('webauthn');
+          setFormValues(prev => ({
+            ...prev,
+            webauthnResponse: credential
+          }));
         } else {
           setSignatureCaptured(false);
           setSignatureData('');
@@ -407,6 +411,7 @@ function closeCamera() {
         signatureData: signatureData,
         signatureCaptured: signatureCaptured,
         thumbprintData: signatureData,
+        webauthnResponse: formValues.webauthnResponse,
         ...(formValues.jobNumber.includes('other') ? { otherLocation } : {})
       };
       // Backend integration: API call to create diesel consumption
