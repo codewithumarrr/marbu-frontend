@@ -4,7 +4,7 @@ import { getAllRoles, register, getAllUsers, updateUser, deleteUser, getUserByEm
 import { getReportSites } from '../services/reportsService.js';
 import { FaEdit, FaTrash, FaIdBadge } from 'react-icons/fa';
 
-const USERS_PER_PAGE = 4;
+const USERS_PER_PAGE = 5;
 
 const UserManagement = () => {
   const [name, setName] = useState('');
@@ -45,6 +45,7 @@ const UserManagement = () => {
     // Load initial data
     const fetchInitialData = async () => {
       try {
+        // Backend integration: API call to get all users
         const [sitesRes, rolesRes, usersRes] = await Promise.all([
           getReportSites(),
           getAllRoles(),
@@ -66,6 +67,7 @@ const UserManagement = () => {
   // Load users from API
   const loadUsers = async () => {
     try {
+      // Backend integration: API call to get all users
       const response = await getAllUsers();
       setUsers(response?.data || []);
       if ((response?.data || []).length > 0) {
@@ -147,6 +149,7 @@ const UserManagement = () => {
         if (password) formData.append('password', password);
         if (userPicture) formData.append('user_picture', userPicture);
 
+        // Backend integration: API call to update user
         await updateUser(editUserId, formData, true); // true for multipart
         setEditUserId(null);
         setShowUpdateModal(true);
@@ -164,6 +167,7 @@ const UserManagement = () => {
         if (password) formData.append('password', password);
         if (userPicture) formData.append('user_picture', userPicture);
 
+        // Backend integration: API call to register user
         await register(formData, true); // true for multipart
         setShowCreateModal(true);
         // Restore: reload users from backend instead of unshifting
@@ -226,6 +230,7 @@ const UserManagement = () => {
     if (!userToDelete) return;
     try {
       const id = userToDelete.user_id || userToDelete.employee_number || userToDelete.employee_id;
+      // Backend integration: API call to delete user
       await deleteUser(id);
       setShowDeleteModal(true);
       setShowDeleteConfirmModal(false);

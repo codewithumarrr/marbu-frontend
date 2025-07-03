@@ -163,6 +163,7 @@ function closeCamera() {
     setIsLoading(true);
     setError('');
     try {
+      // Backend integration: API call to get vehicle types, jobs, and operators
       const [vehicleTypesRes, jobsRes, operatorsRes] = await Promise.all([
         getVehicleEquipmentTypes(),
         getActiveJobs(),
@@ -193,6 +194,7 @@ function closeCamera() {
   const handleEmployeeNumberLookup = async (employeeNumber) => {
     if (!employeeNumber || employeeNumber.length < 3) return;
     try {
+      // Backend integration: API call to get user by employee number
       const response = await getUserByEmployeeNumber(employeeNumber);
       if (response.status === 'success') {
         const employeeData = response.data;
@@ -310,6 +312,7 @@ function closeCamera() {
       const allVehicles = [];
       for (const vehicleType of formData.vehicleTypes || []) {
         try {
+          // Backend integration: API call to get vehicles by type
           const response = await getVehiclesByType(vehicleType);
           const vehicles = response?.data || [];
           allVehicles.push(...vehicles);
@@ -406,6 +409,7 @@ function closeCamera() {
         thumbprintData: signatureData,
         ...(formValues.jobNumber.includes('other') ? { otherLocation } : {})
       };
+      // Backend integration: API call to create diesel consumption
       await createDieselConsumption(payload);
       setSuccessMessage('Fuel consumption record created successfully!');
       setFormValues({
