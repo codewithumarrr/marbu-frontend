@@ -60,10 +60,19 @@ const ReportPreview = ({
 
   return (
     <div style={{ position: 'relative' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 16 }}>
-        <button className="btn btn-primary" onClick={handlePrint}>Print</button>
-        <button className="btn btn-secondary" onClick={handlePDF}>Export PDF</button>
-        <button className="btn btn-success" onClick={handleExcel}>Export Excel</button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <button
+          className="btn btn-secondary"
+          style={{ marginBottom: 0 }}
+          onClick={() => setSelectedReport(null)}
+        >
+          ← Back to Reports
+        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn btn-primary" onClick={handlePrint}>Print</button>
+          <button className="btn btn-secondary" onClick={handlePDF}>Export PDF</button>
+          <button className="btn btn-success" onClick={handleExcel}>Export Excel</button>
+        </div>
       </div>
       <div className="invoice-container" ref={printRef}>
         <header className="invoice-header">
@@ -126,8 +135,8 @@ const ReportPreview = ({
             </tbody>
           </table>
         </section>
-        <footer className="invoice-footer">
-          <img src={footerImg} alt="footer" />
+        <footer className="invoice-footer" style={{ textAlign: 'center', width: '100%' }}>
+          <img src={footerImg} alt="footer" style={{ display: 'block', margin: '0 auto' }} />
         </footer>
       </div>
       <style>{`

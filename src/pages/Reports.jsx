@@ -142,9 +142,9 @@ function Reports() {
     <div id="reports" className="content-panel">
       {selectedReport ? (
         <div id="print-report" style={{ maxWidth: 900, margin: '0 auto', padding: 24 }}>
-          <button className="btn btn-secondary" style={{ marginBottom: 24 }} onClick={() => setSelectedReport(null)}>
+          {/* <button className="btn btn-secondary" style={{ marginBottom: 24 }} onClick={() => setSelectedReport(null)}>
             ← Back to Reports
-          </button>
+          </button> */}
           <ReportPreview
             month={selectedReport.date?.slice(0, 7) || 'MAR 2025'}
             jobNumber={selectedReport.jobNumber || '---'}
