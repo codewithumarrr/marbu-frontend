@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useUserStore } from '../store/userStore.js';
 
 // Base API configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
@@ -15,9 +16,9 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const { accessToken } = useUserStore.getState();
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
     return config;
   },
@@ -39,24 +40,24 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
+        const { refreshToken, updateToken, clearAuth } = useUserStore.getState();
+        
         if (refreshToken) {
           const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
             refreshToken,
           });
 
           const { accessToken } = response.data;
-          localStorage.setItem('accessToken', accessToken);
+          updateToken(accessToken);
 
           // Retry the original request with new token
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return api(originalRequest);
         }
       } catch (refreshError) {
-        // Refresh failed, redirect to login
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('isLoggedIn');
+        // Refresh failed, clear auth and redirect to login
+        const { clearAuth } = useUserStore.getState();
+        clearAuth();
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }

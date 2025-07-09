@@ -3,6 +3,7 @@ import "../styles/pages.css";
 import FilterGroup from "../components/FilterGroup";
 import TableComponent from "../components/TableComponent";
 import Modal from "../components/Modal";
+import InvoicePreview from '../components/InvoicePreview';
 import {
   getAllInvoices,
   getFilteredInvoices,
@@ -12,6 +13,10 @@ import {
   deleteInvoice,
   generateInvoiceFromConsumption
 } from "../services/invoicesService.js";
+import { getAllDivisions } from "../services/divisionsService.js";
+import { getAllEmployees } from "../services/employeesService.js";
+import { getAllSuppliers } from "../services/suppliersService.js";
+import { useNavigate } from 'react-router-dom';
 
 function Invoices() {
   const invoiceHeaders = [
@@ -28,36 +33,81 @@ function Invoices() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [divisions, setDivisions] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [sites, setSites] = useState([]);
+  const [users, setUsers] = useState([]);
   const [form, setForm] = useState({
-    supplier: '',
-    date: '',
-    dueDate: '',
-    amount: '',
-    status: 'Pending',
+    site_id: '',
+    invoice_date: '',
+    start_date: '',
+    end_date: '',
+    total_amount: '',
+    generated_by_user_id: '',
   });
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadInvoices();
+    loadDivisions();
+    loadSites();
+    loadUsers();
     // eslint-disable-next-line
   }, []);
+
+  const loadSuppliers = async () => {
+    try {
+      const res = await getAllSuppliers();
+      setSuppliers(res || []);
+    } catch (err) {}
+  };
+
+  // Use service for sites
+  const loadSites = async () => {
+    try {
+      const { getReportSites } = await import("../services/reportsService.js");
+      const sitesRes = await getReportSites();
+      setSites(sitesRes?.data || []);
+    } catch (err) {}
+  };
+
+  // Use getAllEmployees service for employees
+  const loadUsers = async () => {
+    try {
+      const res = await getAllEmployees();
+      setUsers(res?.data || []);
+    } catch (err) {}
+  };
+
+  const loadDivisions = async () => {
+    try {
+      const res = await getAllDivisions();
+      setDivisions(res?.data || []);
+    } catch (err) {
+      // Optionally handle error
+    }
+  };
 
   const loadInvoices = async (filters = {}) => {
     setLoading(true);
     setApiError('');
     try {
-      // Use filtered endpoint if filters provided, else get all
-      let data;
-      if (Object.keys(filters).length > 0) {
-        data = await getFilteredInvoices(filters);
-        setInvoiceData(data?.data || []);
-      } else {
-        data = await getAllInvoices();
-        setInvoiceData(data?.data || []);
-      }
+      // Build flexible payload
+      const payload = {
+        invoiceType: filters.invoiceType,
+        supplierId: filters.supplierId,
+        dateFrom: filters.dateFrom,
+        dateTo: filters.dateTo,
+        page: filters.page || 1,
+        limit: filters.limit || 10
+      };
+      // Use backend API for filtered invoices
+      const res = await getFilteredInvoices(payload);
+      setInvoiceData(res?.data?.invoices || []);
     } catch (err) {
-      setApiError(err?.response?.data?.message || err.message || 'Failed to load invoices');
+      setApiError('Failed to load invoices');
     } finally {
       setLoading(false);
     }
@@ -65,20 +115,6 @@ function Invoices() {
 
   const createNewInvoice = () => {
     setIsCreateModalOpen(true);
-  };
-
-  const showInvoiceModal = async (invoiceId) => {
-    setLoading(true);
-    setApiError('');
-    try {
-      const invoice = await getInvoiceById(invoiceId);
-      setSelectedInvoice(invoice?.data || null);
-      setIsModalOpen(true);
-    } catch (err) {
-      setApiError(err?.response?.data?.message || err.message || 'Failed to load invoice details');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const closeModal = () => {
@@ -101,7 +137,16 @@ function Invoices() {
     setLoading(true);
     setApiError('');
     try {
-      await createInvoice(form);
+      // Prepare payload for backend with correct field names
+      const payload = {
+        site_id: parseInt(form.site_id),
+        invoice_date: form.invoice_date,
+        start_date: form.start_date,
+        end_date: form.end_date,
+        total_amount: parseFloat(form.total_amount),
+        generated_by_user_id: form.generated_by_user_id
+      };
+      await createInvoice(payload);
       closeCreateModal();
       loadInvoices();
     } catch (err) {
@@ -113,7 +158,7 @@ function Invoices() {
 
   return (
     <div id="invoices" className="content-panel">
-      <h2 style={{ marginBottom: '20px', color: '#015998' }}>Diesel Invoices</h2>
+      <h2 style={{ marginBottom: '20px', color: '#015998',fontSize:27,fontWeight:700 }}>Diesel Invoices</h2>
       <FilterGroup onSubmit={e => {
         e.preventDefault();
         const form = e.target;
@@ -133,12 +178,14 @@ function Invoices() {
           </select>
         </div>
         <div className="form-group">
-          <label className="form-label">Supplier</label>
-          <select className="form-select" id="invoiceSupplier" name="supplierId">
-            <option value="">All Suppliers</option>
-            <option value="sup-001">Qatar Fuel Company</option>
-            <option value="sup-002">Gulf Energy Ltd.</option>
-            <option value="sup-003">Doha Petroleum</option>
+          <label className="form-label">Division</label>
+          <select className="form-select" id="supplierId" name="supplierId">
+            <option value="">All Divisions</option>
+            {divisions.map(div => (
+              <option key={div.division_id} value={div.division_name}>
+                {div.division_name}
+              </option>
+            ))}
           </select>
         </div>
         <div className="form-group">
@@ -210,7 +257,7 @@ function Invoices() {
               <button
                 className="btn btn-secondary"
                 style={{ padding: '5px 10px', fontSize: '12px' }}
-                onClick={() => showInvoiceModal(row.id)}
+                onClick={() => navigate(`/invoice/${row.id}`)}
               >
                 👁️ View
               </button>
@@ -219,91 +266,90 @@ function Invoices() {
         )}
       />
       <Modal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        title={`Invoice Details: ${selectedInvoice?.invoiceNo || selectedInvoice?.id || ""}`}
-      >
-        {selectedInvoice && (
-          <div>
-            <p>
-              <strong>Supplier:</strong> {selectedInvoice.supplier}
-            </p>
-            <p>
-              <strong>Date:</strong> {selectedInvoice.date}
-            </p>
-            <p>
-              <strong>Due Date:</strong> {selectedInvoice.dueDate}
-            </p>
-            <p>
-              <strong>Total Amount:</strong> {selectedInvoice.amount}
-            </p>
-            <p>
-              <strong>Status:</strong> {selectedInvoice.status}
-            </p>
-          </div>
-        )}
-      </Modal>
-      <Modal
         isOpen={isCreateModalOpen}
         onClose={closeCreateModal}
         title="Create New Invoice"
       >
         <form onSubmit={handleCreateSubmit}>
+          {/* Supplier field removed, as supplier_id is not a direct field on invoice */}
           <div className="form-group">
-            <label className="form-label">Supplier</label>
-            <input
-              type="text"
-              className="form-input"
-              name="supplier"
-              value={form.supplier}
-              onChange={handleFormChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Date</label>
-            <input
-              type="date"
-              className="form-input"
-              name="date"
-              value={form.date}
-              onChange={handleFormChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Due Date</label>
-            <input
-              type="date"
-              className="form-input"
-              name="dueDate"
-              value={form.dueDate}
-              onChange={handleFormChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Amount</label>
-            <input
-              type="text"
-              className="form-input"
-              name="amount"
-              value={form.amount}
-              onChange={handleFormChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Status</label>
+            <label className="form-label">Site</label>
             <select
               className="form-select"
-              name="status"
-              value={form.status}
+              name="site_id"
+              value={form.site_id}
               onChange={handleFormChange}
               required
             >
-              <option value="Pending">Pending</option>
-              <option value="Paid">Paid</option>
+              <option value="">Select Site</option>
+              {sites.map(site => (
+                <option key={site.site_id} value={site.site_id}>
+                  {site.site_name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Invoice Date</label>
+            <input
+              type="date"
+              className="form-input"
+              name="invoice_date"
+              value={form.invoice_date}
+              onChange={handleFormChange}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Start Date</label>
+            <input
+              type="date"
+              className="form-input"
+              name="start_date"
+              value={form.start_date}
+              onChange={handleFormChange}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">End Date</label>
+            <input
+              type="date"
+              className="form-input"
+              name="end_date"
+              value={form.end_date}
+              onChange={handleFormChange}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Total Amount</label>
+            <input
+              type="number"
+              className="form-input"
+              name="total_amount"
+              value={form.total_amount}
+              onChange={handleFormChange}
+              required
+              min="0"
+              step="0.01"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Generated By</label>
+            <select
+              className="form-select"
+              name="generated_by_user_id"
+              value={form.generated_by_user_id}
+              onChange={handleFormChange}
+              required
+            >
+              <option value="">Select User</option>
+              {users.map(user => (
+                <option key={user.employee_number} value={user.employee_number}>
+                  {user.employee_name} ({user.employee_number})
+                </option>
+              ))}
             </select>
           </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>

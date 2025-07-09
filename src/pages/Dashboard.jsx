@@ -60,12 +60,12 @@ function Dashboard() {
   const activityHeaders = [
     "Date & Time",
     "Vehicle/Equipment",
-    "Operator",
-    "Mobile",
+    "Emp Role",
+    "Emp Name",
     "Quantity (L)",
     "Job Number",
     "Status",
-  ];
+  ];    
 
   // Format dashboard stats for display
   const formatNumber = (num) => {
@@ -85,12 +85,12 @@ function Dashboard() {
         alignItems: 'center',
         marginBottom: '20px'
       }}>
-        <h2 style={{ color: '#015998', margin: 0 }}>Dashboard Overview</h2>
+        <h2 style={{ color: '#015998', margin: 0, fontWeight: 700, fontSize: 27 }}>Dashboard Overview</h2>
         <button
           onClick={handleRefresh}
           disabled={isLoading || refreshing}
           style={{
-            background: '#015998',
+            background: 'linear-gradient(135deg, #25b86f 0%, #015998 100%)',
             color: 'white',
             border: 'none',
             borderRadius: '6px',
@@ -190,19 +190,19 @@ function Dashboard() {
 
           {/* Recent Activity Table */}
           <div style={{ marginTop: '20px' }}>
-            <h3 style={{ color: '#015998', marginBottom: '16px' }}>Recent Fuel Activities</h3>
+            <h3 style={{ color: '#015998', margin: 0, fontWeight: 700, fontSize: 27 }}>Recent Fuel Activities</h3>
             {recentActivity.length > 0 ? (
               <TableComponent
                 headers={activityHeaders}
                 data={recentActivity}
                 renderRow={(row) => (
                   <>
-                    <td>{row.date || row.consumption_datetime}</td>
-                    <td>{row.vehicle || `${row.vehicleType} ${row.vehicleId}`}</td>
-                    <td>{row.operator || row.operatorName}</td>
-                    <td>{row.mobile || row.operatorMobile || 'N/A'}</td>
-                    <td>{row.quantity || row.fuelUsed}</td>
-                    <td>{row.job || row.jobNumber}</td>
+                    <td>{row.date}</td>
+                    <td>{row.vehicle}</td>
+                    <td>{row.role}</td>
+                    <td>{row.operator}</td>
+                    <td>{row.quantity}</td>
+                    <td>{row.job}</td>
                     <td>
                       <span className={`status-badge status-${(row.status || 'active').toLowerCase()}`}>
                         {row.status || 'Active'}
